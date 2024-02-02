@@ -1,0 +1,25 @@
+{
+  "name": "epilog",
+  "displayName": "Epilog",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "epilog",
+      "aliases": ["Epilog", "epilog"],
+      "extensions": [".epilog",".hrf"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "epilog",
+      "scopeName": "source.epilog",
+      "path": "./syntaxes/epilog.tmLanguage.json"
+    }]
+  }
+}
