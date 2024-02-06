@@ -12,6 +12,19 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}"
             ]
-        }
+        },
+        {
+			"type": "extensionHost",
+			"request": "launch",
+			"name": "Launch Client",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"outFiles": ["${workspaceRoot}/client/out/**/*.js"],
+			"autoAttachChildProcesses": true,
+			"preLaunchTask": {
+				"type": "npm",
+				"script": "watch"
+			}
+		}
     ]
 }
