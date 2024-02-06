@@ -102,10 +102,13 @@ async function validateTextDocument(textDocument) {
     let m;
     let problems = 0;
     const diagnostics = [];
+    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+    // Right now, disable this for Epilog
+    /*
     while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
         problems++;
-        const diagnostic = {
-            severity: node_1.DiagnosticSeverity.Warning,
+        const diagnostic: Diagnostic = {
+            severity: DiagnosticSeverity.Warning,
             range: {
                 start: textDocument.positionAt(m.index),
                 end: textDocument.positionAt(m.index + m[0].length)
@@ -133,8 +136,9 @@ async function validateTextDocument(textDocument) {
         }
         diagnostics.push(diagnostic);
     }
+
     // Send the computed diagnostics to VSCode.
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });*/
 }
 connection.onDidChangeWatchedFiles(_change => {
     // Monitored files have change in VSCode
@@ -147,12 +151,12 @@ connection.onCompletion((_textDocumentPosition) => {
     // info and always provide the same completion items.
     return [
         {
-            label: 'TypeScript',
+            label: 'DATASET',
             kind: node_1.CompletionItemKind.Text,
             data: 1
         },
         {
-            label: 'JavaScript',
+            label: 'RULESET',
             kind: node_1.CompletionItemKind.Text,
             data: 2
         }
@@ -162,12 +166,12 @@ connection.onCompletion((_textDocumentPosition) => {
 // the completion list.
 connection.onCompletionResolve((item) => {
     if (item.data === 1) {
-        item.detail = 'TypeScript details';
-        item.documentation = 'TypeScript documentation';
+        item.detail = 'Precedes an Epilog dataset';
+        item.documentation = '';
     }
     else if (item.data === 2) {
-        item.detail = 'JavaScript details';
-        item.documentation = 'JavaScript documentation';
+        item.detail = 'Precedes an Epilog ruleset';
+        item.documentation = '';
     }
     return item;
 });

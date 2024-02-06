@@ -145,6 +145,11 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
+
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	
+	// Right now, disable this for Epilog
+	/*
 	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
 		problems++;
 		const diagnostic: Diagnostic = {
@@ -178,7 +183,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	}
 
 	// Send the computed diagnostics to VSCode.
-	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });*/
 }
 
 connection.onDidChangeWatchedFiles(_change => {
@@ -194,12 +199,12 @@ connection.onCompletion(
 		// info and always provide the same completion items.
 		return [
 			{
-				label: 'TypeScript',
+				label: 'DATASET',
 				kind: CompletionItemKind.Text,
 				data: 1
 			},
 			{
-				label: 'JavaScript',
+				label: 'RULESET',
 				kind: CompletionItemKind.Text,
 				data: 2
 			}
@@ -212,11 +217,11 @@ connection.onCompletion(
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
 		if (item.data === 1) {
-			item.detail = 'TypeScript details';
-			item.documentation = 'TypeScript documentation';
+			item.detail = 'Precedes an Epilog dataset';
+			item.documentation = '';
 		} else if (item.data === 2) {
-			item.detail = 'JavaScript details';
-			item.documentation = 'JavaScript documentation';
+			item.detail = 'Precedes an Epilog ruleset';
+			item.documentation = '';
 		}
 		return item;
 	}

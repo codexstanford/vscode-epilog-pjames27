@@ -3,6 +3,11 @@
   "displayName": "Epilog",
   "description": "Language Support for Epilog",
   "version": "0.0.1",
+  "publisher": "prestonj-epilog",
+  "repository": {
+    "type": "git",
+		"url": "https://github.com/codexstanford/vscode-epilog-pjames27"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
