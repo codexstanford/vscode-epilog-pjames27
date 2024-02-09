@@ -19,14 +19,38 @@
     "languages": [{
       "id": "epilog",
       "aliases": ["Epilog", "epilog"],
-      "extensions": [".epilog",".hrf"],
+      "extensions": [".epilog"],
       "configuration": "./language-configuration.json"
-    }],
+    },
+    {
+      "id": "epilog-dataset",
+      "aliases": ["Epilog Dataset", "epilog dataset"],
+      "extensions": [".hdf"],
+      "configuration": "./language-configuration.json"
+    },
+    {
+      "id": "epilog-ruleset",
+      "aliases": ["Epilog Ruleset", "epilog ruleset"],
+      "extensions": [".hrf"],
+      "configuration": "./language-configuration.json"
+    }
+  ],
     "grammars": [{
       "language": "epilog",
       "scopeName": "source.epilog",
       "path": "./syntaxes/epilog.tmLanguage.json"
-    }],
+    },
+    {
+      "language": "epilog-dataset",
+      "scopeName": "source.epilog-dataset",
+      "path": "./syntaxes/epilog-dataset.tmLanguage.json"
+    },
+    {
+      "language": "epilog-ruleset",
+      "scopeName": "source.epilog-ruleset",
+      "path": "./syntaxes/epilog-ruleset.tmLanguage.json"
+    }
+  ],
     
     "configuration": {
 			"type": "object",
