@@ -2,7 +2,7 @@
     "name": "epilog",
     "displayName": "Epilog",
     "description": "Language Support for Epilog",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "engines": {
       "vscode": "^1.85.0"
     },
