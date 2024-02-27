@@ -25,16 +25,22 @@
 		"standard-atom-ground" : {
 			"name": "entity.name.function.standard-atom-ground",
 			"begin": "(([a-z0-9.][a-z0-9_.]*)|(\"([^\"]|\\\\.)*\"))\\(\\s*",
-			"end": "\\s*\\)\\s*\n",
+			"end": "(\\s*\\)\\s*)([%].*)?\n",
 			"patterns": [
 				{"include": "#epilog-ground-term"},
 				{"include": "#punctuation-comma"}
-			]
+			],
+			"endCaptures": {
+				"2": {"name": "comment.line.percentage"}
+			}
 		},
 		
 		"boolean-atom" : {
 			"name": "entity.name.function.boolean-atom",
-			"match": "(([a-z0-9.][a-z0-9_.]*)|(\".*\"))\\s*\n"
+			"match": "(([a-z0-9.][a-z0-9_.]*)|(\".*\"))\\s*([%].*)?\n",
+			"captures": { 
+				"4": { "name" : "comment.line.percentage"}
+			}
 		},
 		
 		"epilog-ground-term": {

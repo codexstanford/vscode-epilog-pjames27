@@ -24,8 +24,11 @@ No extension settings are currently contributed/implemented.
 
 ## Release Notes
 
+### 0.0.3
+- Fixed bug that caused incorrect syntax highlighting for inline comments in datasets.
+
 ### 0.0.2
 - For files that only contain datasets (.hdf) or rulesets (.hrf), syntax highlighting no longer requires a prefix "DATASET" or "RULESET" with surrounding curly braces.
 
 ### 0.0.1
-- Basic syntax highlighting for Epilog datasets and rulesets
+- Basic syntax highlighting for Epilog datasets and rulesets.
