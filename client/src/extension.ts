@@ -3,6 +3,9 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
+import * as vscode from 'vscode';
+
+
 import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
 
@@ -15,7 +18,7 @@ import {
 
 let client: LanguageClient;
 
-export function activate(context: ExtensionContext) {
+function startClientAndServer(context: ExtensionContext) {
 	// The server is implemented in node
 	const serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
@@ -61,6 +64,25 @@ export function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server
 	client.start();
 	console.log("client started");
+}
+
+function registerCommands(context: ExtensionContext) {
+	// Command to run an Epilog query (Not yet implemented)
+	let disposable = vscode.commands.registerCommand('epilog.runQuery', () => {
+		const editor = vscode.window.activeTextEditor;
+		
+		console.log(editor.document.getText());
+	  });
+	
+	  context.subscriptions.push(disposable);
+	  console.log("registered epilog.runQuery");
+}
+
+export function activate(context: ExtensionContext) {
+	startClientAndServer(context);
+
+	registerCommands(context);
+	
 }
 
 export function deactivate(): Thenable<void> | undefined {

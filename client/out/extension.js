@@ -5,11 +5,12 @@
  * ------------------------------------------------------------------------------------------ */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
+const vscode = require("vscode");
 const path = require("path");
 const vscode_1 = require("vscode");
 const node_1 = require("vscode-languageclient/node");
 let client;
-function activate(context) {
+function startClientAndServer(context) {
     // The server is implemented in node
     const serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
     // The debug options for the server
@@ -42,6 +43,19 @@ function activate(context) {
     // Start the client. This will also launch the server
     client.start();
     console.log("client started");
+}
+function registerCommands(context) {
+    // Command to run an Epilog query
+    let disposable = vscode.commands.registerCommand('epilog.runQuery', () => {
+        const editor = vscode.window.activeTextEditor;
+        console.log(editor.document.getText());
+    });
+    context.subscriptions.push(disposable);
+    console.log("registered epilog.runQuery");
+}
+function activate(context) {
+    startClientAndServer(context);
+    registerCommands(context);
 }
 exports.activate = activate;
 function deactivate() {
