@@ -10,7 +10,7 @@ import {
 	LanguageClient,
 	LanguageClientOptions,
 	ServerOptions,
-	TransportKind
+	TransportKind,
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -41,8 +41,8 @@ export function activate(context: ExtensionContext) {
 
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
-		// Register the server for plain text documents
-		documentSelector: [{ scheme: 'file', language: 'epilog' }],
+		// Register the server for epilog documents
+		documentSelector: [{ scheme: 'file', language: 'epilog' }, { scheme: 'file', language: 'epilog-ruleset' }],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
@@ -51,8 +51,8 @@ export function activate(context: ExtensionContext) {
 
 	// Create the language client and start the client.
 	client = new LanguageClient(
-		'languageServerExample',
-		'Language Server Example',
+		'epilogLanguageServer',
+		'Epilog Language Server',
 		serverOptions,
 		clientOptions
 	);

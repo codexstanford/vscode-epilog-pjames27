@@ -30,15 +30,15 @@ function activate(context) {
     };
     // Options to control the language client
     const clientOptions = {
-        // Register the server for plain text documents
-        documentSelector: [{ scheme: 'file', language: 'epilog' }],
+        // Register the server for epilog documents
+        documentSelector: [{ scheme: 'file', language: 'epilog' }, { scheme: 'file', language: 'epilog-ruleset' }],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace
             fileEvents: vscode_1.workspace.createFileSystemWatcher('**/.clientrc')
         }
     };
     // Create the language client and start the client.
-    client = new node_1.LanguageClient('languageServerExample', 'Language Server Example', serverOptions, clientOptions);
+    client = new node_1.LanguageClient('epilogLanguageServer', 'Epilog Language Server', serverOptions, clientOptions);
     // Start the client. This will also launch the server
     client.start();
     console.log("client started");
