@@ -127,7 +127,7 @@ function getYamlFrontmatterDiagnostics(
                 start: {line: 0, character: 0},
                 end: {line: 1, character: 0}
             },
-            message: 'YAML frontmatter not detected on the first line of the document',
+            message: 'No YAML frontmatter detected',
             source: 'epilog',
             
         });
@@ -169,15 +169,17 @@ function getYamlFrontmatterDiagnostics(
         const documentDir = path.dirname(URI.parse(textDocument.uri).fsPath);
 
         // Check that the metadata field values are valid, real metadata files
+        let frontmatterLines = frontmatter.split('\n');
         for (const [filepath, lineNumber] of metadataFieldValues) {
             // Check that the value is a valid metadata file
                 // Does it end in .metadata
             if (!filepath.endsWith('.metadata')) {
+                let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
                 yamlDiagnostics.push({
-                    severity: DiagnosticSeverity.Warning,
+                    severity: DiagnosticSeverity.Error,
                     range: {
-                        start: {line: lineNumber, character: 0},
-                        end: {line: lineNumber, character: Number.MAX_VALUE}
+                        start: {line: lineNumber, character: startIndex},
+                        end: {line: lineNumber, character: startIndex + filepath.length}
                     },
                     message: 'Filepath doesn\'t point to a .metadata file',
                     source: 'epilog'
@@ -187,11 +189,12 @@ function getYamlFrontmatterDiagnostics(
             // Check that the file exists in the workspace
             let absPath = path.join(documentDir, filepath);
             if (!fs.existsSync(absPath)) {
+                let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
                 yamlDiagnostics.push({
-                    severity: DiagnosticSeverity.Warning,
+                    severity: DiagnosticSeverity.Error,
                     range: {
-                        start: {line: lineNumber, character: 0},
-                        end: {line: lineNumber, character: Number.MAX_VALUE}
+                        start: {line: lineNumber, character: startIndex},
+                        end: {line: lineNumber, character: startIndex + filepath.length}
                     },
                     message: "The file " + absPath + " doesn't exist",
                     source: 'epilog'
