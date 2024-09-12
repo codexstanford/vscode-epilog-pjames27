@@ -34,7 +34,8 @@ function activate(context) {
         documentSelector: [
             { scheme: 'file', language: 'epilog' },
             { scheme: 'file', language: 'epilog-ruleset' },
-            { scheme: 'file', language: 'epilog-dataset' }
+            { scheme: 'file', language: 'epilog-dataset' },
+            { scheme: 'file', language: 'epilog-metadata' }
         ],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace

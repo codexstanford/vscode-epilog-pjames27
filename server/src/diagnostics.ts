@@ -12,9 +12,30 @@ import {
 
 import { URI } from 'vscode-uri';
 
-type FrontMatterFieldsToValues = Map<string, string[]>;
+import {
+    EPILOG_LANGUAGE_ID,
+    EPILOG_RULESET_LANGUAGE_ID,
+    EPILOG_DATASET_LANGUAGE_ID,
+    EPILOG_METADATA_LANGUAGE_ID
+} from './constants';
 
+type FrontMatterFieldsToValues = Map<string, string[]>;
 const yamlFrontmatterRegex = /^---\s*\n(?:(?!---)[^\n]*\n)*---/;
+
+const languageIdToRelevantFields = new Map<string, {required: string[], optional: string[]}>([
+    [EPILOG_LANGUAGE_ID, 
+        {required: ['metadata', 'epilog-file-type'], optional: []}
+    ],
+    [EPILOG_RULESET_LANGUAGE_ID, 
+        {required: ['metadata', 'epilog-file-type'], optional: []}
+    ],
+    [EPILOG_DATASET_LANGUAGE_ID, 
+        {required: ['metadata', 'epilog-file-type'], optional: []}
+    ],
+    [EPILOG_METADATA_LANGUAGE_ID, 
+        {required: ['epilog-file-type'], optional: ['metadata']}
+    ]
+]);
 
 function hasFrontmatter(docText: string): boolean {
     return yamlFrontmatterRegex.test(docText);
@@ -83,9 +104,8 @@ function parseFrontmatterFields(frontmatter: string): [Diagnostic[], Map<string,
                 continue;
             }
 
-            // Comes after a field, so add the value to the current field 
+            // Follows a field, so add the value to the current field
             const value = valueLine[0].trim().slice(2);
-            // Add the value to the current field
             fieldsToValsWithLineNums.get(currentField)?.push([value, i]);
             continue;
         }
@@ -112,100 +132,117 @@ function parseFrontmatterFields(frontmatter: string): [Diagnostic[], Map<string,
     return [fieldDiagnostics, fieldsToValsWithLineNums];
 }
 
-function getYamlFrontmatterDiagnostics(
+function validateMetadataValues(
+    textDocument: TextDocument,
+    frontmatterLines: string[],
+    metadataValsWithLineNums: [string, number][],
+    frontmatterFieldValues: FrontMatterFieldsToValues,
+): [Diagnostic[], FrontMatterFieldsToValues] {
+
+    let metadataValueDiagnostics: Diagnostic[] = [];
+    // Add the metadata field values to the frontmatter field values
+    frontmatterFieldValues.set('metadata', []);
+
+    // Convert the textDocument uri to a filepath
+    const documentDir = path.dirname(URI.parse(textDocument.uri).fsPath);
+
+    // Validate the metadata field values
+    for (const [filepath, lineNumber] of metadataValsWithLineNums) {
+        // Check that the value is a valid metadata file
+            // Does it end in .metadata
+        if (!filepath.endsWith('.metadata')) {
+            let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
+            metadataValueDiagnostics.push({
+                severity: DiagnosticSeverity.Error,
+                range: {
+                    start: {line: lineNumber, character: startIndex},
+                    end: {line: lineNumber, character: startIndex + filepath.length}
+                },
+                message: 'Filepath doesn\'t point to a .metadata file',
+                source: 'epilog'
+            });
+            continue;
+        }
+        // Check that the file exists in the workspace
+        let absPath = path.join(documentDir, filepath);
+        if (!fs.existsSync(absPath)) {
+            let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
+            metadataValueDiagnostics.push({
+                severity: DiagnosticSeverity.Error,
+                range: {
+                    start: {line: lineNumber, character: startIndex},
+                    end: {line: lineNumber, character: startIndex + filepath.length}
+                },
+                message: "The file " + absPath + " doesn't exist",
+                source: 'epilog'
+            });
+            continue;
+        }
+        // It exists and is a valid metadata file, so add it to the frontmatter field values
+        frontmatterFieldValues.get('metadata')?.push(absPath);
+    }
+    return [metadataValueDiagnostics, frontmatterFieldValues];
+}
+
+
+function validateYamlFrontmatter(
     textDocument: TextDocument,
     docText: string,
 ): [Diagnostic[], FrontMatterFieldsToValues] {
     let yamlDiagnostics: Diagnostic[] = [];
     let frontmatterFieldValues = new Map<string, string[]>();
 
-    // Alert if no frontmatter is detected
+    const requiredFields = languageIdToRelevantFields.get(textDocument.languageId)?.required;
+
+    // Validate whether there is frontmatter if there are required fields
     if (!hasFrontmatter(docText)) {
-        yamlDiagnostics.push({
-            severity: DiagnosticSeverity.Warning,
-            range: {
-                start: {line: 0, character: 0},
-                end: {line: 1, character: 0}
-            },
-            message: 'No YAML frontmatter detected',
-            source: 'epilog',
-            
-        });
+        if (requiredFields !== undefined && requiredFields.length > 0) {
+            yamlDiagnostics.push({
+                severity: DiagnosticSeverity.Error,
+                range: {
+                    start: {line: 0, character: 0},
+                    end: {line: 1, character: 0}
+                },
+                message: 'No YAML frontmatter detected',
+                source: 'epilog',
+            });
+        }
         return [yamlDiagnostics, frontmatterFieldValues];
     }
 
 
-    // Check for required fields in the frontmatter
     const frontmatter = getFrontmatter(docText);
-
+    const frontmatterLines = frontmatter.split('\n');
+    
     const [fieldDiagnostics, fieldsToValsWithLineNums] = parseFrontmatterFields(frontmatter);
     yamlDiagnostics.push(...fieldDiagnostics);
-
-    // Metadata field checks
-    // Check for the presence of the metadata field
-    if (!fieldsToValsWithLineNums.has('metadata')) {
-        yamlDiagnostics.push({
-            severity: DiagnosticSeverity.Warning,
-            range: {
-                start: {line: 0, character: 0},
-                end: {line: frontmatter.split('\n').length - 1, character: 0}
-            },
-            message: 'Missing metadata field',
-            source: 'epilog'
-        });
-    } else {
-        // Add the metadata field values to the frontmatter field values
-        frontmatterFieldValues.set('metadata', []);
-
-        // Check that the metadata field values are valid metadata files
-        const metadataFieldValues = fieldsToValsWithLineNums.get('metadata');
-        if (metadataFieldValues === undefined) {
-            // Should never happen
-            console.error('Metadata field isn\'t present');
-            return [yamlDiagnostics, frontmatterFieldValues];
-        }
-
-        // Convert the textDocument uri to a filepath
-        const documentDir = path.dirname(URI.parse(textDocument.uri).fsPath);
-
-        // Check that the metadata field values are valid, real metadata files
-        let frontmatterLines = frontmatter.split('\n');
-        for (const [filepath, lineNumber] of metadataFieldValues) {
-            // Check that the value is a valid metadata file
-                // Does it end in .metadata
-            if (!filepath.endsWith('.metadata')) {
-                let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
-                yamlDiagnostics.push({
-                    severity: DiagnosticSeverity.Error,
-                    range: {
-                        start: {line: lineNumber, character: startIndex},
-                        end: {line: lineNumber, character: startIndex + filepath.length}
-                    },
-                    message: 'Filepath doesn\'t point to a .metadata file',
-                    source: 'epilog'
-                });
-                continue;
-            }
-            // Check that the file exists in the workspace
-            let absPath = path.join(documentDir, filepath);
-            if (!fs.existsSync(absPath)) {
-                let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
-                yamlDiagnostics.push({
-                    severity: DiagnosticSeverity.Error,
-                    range: {
-                        start: {line: lineNumber, character: startIndex},
-                        end: {line: lineNumber, character: startIndex + filepath.length}
-                    },
-                    message: "The file " + absPath + " doesn't exist",
-                    source: 'epilog'
-                });
-                continue;
-            }
-            // It exists and is a valid metadata file, so add it to the frontmatter field values
-            frontmatterFieldValues.get('metadata')?.push(absPath);
+    
+    // Validate that all required fields are present
+    for (const field of requiredFields ?? []) {
+        if (!fieldsToValsWithLineNums.has(field)) {
+            yamlDiagnostics.push({
+                severity: DiagnosticSeverity.Error,
+                range: {
+                    start: {line: 0, character: 0},
+                    end: {line: 1, character: 0}
+                },  
+                message: 'Missing \'' + field + '\' field',
+                source: 'epilog'
+            });
         }
     }
 
+    // Validate the values of the fields that are present and relevant
+    const relevantFields = new Set([...(languageIdToRelevantFields.get(textDocument.languageId)?.required ?? []), ...(languageIdToRelevantFields.get(textDocument.languageId)?.optional ?? [])])   ;
+    
+    if (relevantFields.has('metadata') && fieldsToValsWithLineNums.has('metadata')) {
+        const [metadataValueDiagnostics, updatedFrontmatterFieldValues] = validateMetadataValues(textDocument, frontmatterLines, fieldsToValsWithLineNums.get('metadata') ?? [], frontmatterFieldValues);
+        yamlDiagnostics.push(...metadataValueDiagnostics);
+        frontmatterFieldValues = updatedFrontmatterFieldValues;
+    }
+
+    
+    
 
     return [yamlDiagnostics, frontmatterFieldValues];
 }
@@ -230,7 +267,7 @@ function getMetadataDiagnostics(
     for (const metadataFilepath of frontmatterFieldsToValues.get('metadata') ?? []) {
         const metadataFileText = fs.readFileSync(metadataFilepath, 'utf8');
 
-        console.log(metadataFileText);
+        //console.log(metadataFileText);
     }
 
 
@@ -247,10 +284,13 @@ export function getDiagnostics(
     docText: string,
 ): Diagnostic[] {
     // Get YAML frontmatter diagnostics
-    let [yamlDiagnostics, frontmatterFieldValues] = getYamlFrontmatterDiagnostics(textDocument, docText);
+    let [yamlDiagnostics, relevantFrontmatterFieldValues] = validateYamlFrontmatter(textDocument, docText);
 
-    // Get metadata diagnostics
-    let metadataDiagnostics = getMetadataDiagnostics(textDocument, docText, frontmatterFieldValues);
+    // If the metadata field is specified for this file, get metadata diagnostics
+    let metadataDiagnostics: Diagnostic[] = [];
+    if (relevantFrontmatterFieldValues.has('metadata')) {
+        metadataDiagnostics = getMetadataDiagnostics(textDocument, docText, relevantFrontmatterFieldValues);
+    }
 
     // Return all diagnostics
     return [...yamlDiagnostics, ...metadataDiagnostics];

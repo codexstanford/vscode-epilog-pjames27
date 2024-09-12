@@ -49,6 +49,17 @@
           ".hrf"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "epilog-metadata",
+        "aliases": [
+          "Epilog Metadata",
+          "epilog metadata"
+        ],
+        "extensions": [
+          ".metadata"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
