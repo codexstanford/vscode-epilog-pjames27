@@ -95,9 +95,9 @@ documents.onDidChangeContent(change => {
     validateTextDocument(change.document);
 });
 async function validateTextDocument(textDocument) {
-    const docText = textDocument.getText();
-    const docSettings = await getDocumentSettings(textDocument.uri);
-    const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument, docText);
+    //const docText = textDocument.getText();
+    //const docSettings = await getDocumentSettings(textDocument.uri);
+    const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument);
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 connection.onDidChangeWatchedFiles(_change => {

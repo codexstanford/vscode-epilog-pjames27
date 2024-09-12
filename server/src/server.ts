@@ -135,10 +135,10 @@ documents.onDidChangeContent(change => {
 
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-	const docText = textDocument.getText();
-	const docSettings = await getDocumentSettings(textDocument.uri);
+	//const docText = textDocument.getText();
+	//const docSettings = await getDocumentSettings(textDocument.uri);
 
-	const diagnostics = getDiagnostics(textDocument, docText);
+	const diagnostics = getDiagnostics(textDocument);
 
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
