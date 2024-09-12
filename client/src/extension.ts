@@ -39,16 +39,21 @@ export function activate(context: ExtensionContext) {
 		}
 	};
 
+	
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
 		// Register the server for epilog documents
-		documentSelector: [{ scheme: 'file', language: 'epilog' }, { scheme: 'file', language: 'epilog-ruleset' }],
+		documentSelector: [
+			{ scheme: 'file', language: 'epilog' },
+			{ scheme: 'file', language: 'epilog-ruleset' },
+			{ scheme: 'file', language: 'epilog-dataset' }
+		],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
 		}
 	};
-
+	
 	// Create the language client and start the client.
 	client = new LanguageClient(
 		'epilogLanguageServer',
@@ -56,7 +61,7 @@ export function activate(context: ExtensionContext) {
 		serverOptions,
 		clientOptions
 	);
-
+	
 	
 	// Start the client. This will also launch the server
 	client.start();
