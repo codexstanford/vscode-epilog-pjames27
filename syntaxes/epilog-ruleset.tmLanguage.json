@@ -10,6 +10,7 @@
 		"ruleset": {
 			"name": "ruleset.epilog",
 			"patterns": [
+				{"include": "#frontmatter"},
 				{"include": "#comment"},
 				{"include": "#punctuation-ampersand"},
 				{"include": "#rule-def"},
@@ -169,9 +170,29 @@
 		"comment": {
 			"name": "comment.line.percentage",
 			"match": "[%].*\n"
+		},
+
+		"frontmatter": {
+			"name": "comment.block.frontmatter.epilog",
+			"begin": "^---",
+			"end": "^---",
+			"patterns": [
+				{
+					"name": "frontmatter.key",
+					"match": "[a-zA-Z0-9_.]+\\s*:\\s*",
+					"captures": {
+						"1": { "name": "frontmatter.key" }
+					}
+				},
+				{
+					"name": "frontmatter.value",
+					"match": "[^\\s].*",
+					"captures": {
+						"1": { "name": "frontmatter.value" }
+					}
+				}
+			]
 		}
-
-
 
 		
 	}
