@@ -117,7 +117,13 @@
           "description": "Traces the communication between VS Code and the language server."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "epilog.runScript",
+        "title": "Run Epilog Script"
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -b",

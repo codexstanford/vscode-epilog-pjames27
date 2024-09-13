@@ -4,6 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
+import * as vscode from 'vscode';
 import { workspace, ExtensionContext } from 'vscode';
 
 import {
@@ -12,6 +13,8 @@ import {
 	ServerOptions,
 	TransportKind,
 } from 'vscode-languageclient/node';
+
+import { epilogCmd_runScript } from './commands/epilog_runScript';
 
 let client: LanguageClient;
 
@@ -47,12 +50,14 @@ export function activate(context: ExtensionContext) {
 			{ scheme: 'file', language: 'epilog' },
 			{ scheme: 'file', language: 'epilog-ruleset' },
 			{ scheme: 'file', language: 'epilog-dataset' },
-			{ scheme: 'file', language: 'epilog-metadata' }
+			{ scheme: 'file', language: 'epilog-metadata' },
+			{ scheme: 'file', language: 'epilog-script' }
 		],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
-		}
+		},
+		outputChannel: vscode.window.createOutputChannel('Epilog Language Server')
 	};
 	
 	// Create the language client and start the client.
@@ -63,6 +68,11 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 	
+	let disposable = vscode.commands.registerCommand('epilog.runScript', () => {
+		epilogCmd_runScript(client);
+	});
+
+	context.subscriptions.push(disposable);
 	
 	// Start the client. This will also launch the server
 	client.start();
