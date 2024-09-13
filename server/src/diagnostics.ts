@@ -15,7 +15,7 @@ import { URI } from 'vscode-uri';
 import {
     hasFrontmatter,
     getFrontmatter
-} from './frontmatter';
+} from '../../common/out/frontmatter.js';
 
 import {
     EPILOG_LANGUAGE_ID,
@@ -23,7 +23,7 @@ import {
     EPILOG_DATASET_LANGUAGE_ID,
     EPILOG_METADATA_LANGUAGE_ID,
     EPILOG_SCRIPT_LANGUAGE_ID
-} from './constants';
+} from '../../common/out/language_ids.js';
 
 type FrontMatterFieldsToValues = Map<string, string[]>;
 

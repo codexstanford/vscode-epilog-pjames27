@@ -4,13 +4,14 @@ exports.epilogCmd_runScript = void 0;
 const vscode = require("vscode");
 const fs = require("fs");
 const epilog_js = require("../../../common/out/plain-js/epilog.js");
-const test_common_js_1 = require("../../../common/out/test_common.js");
+const frontmatter_js_1 = require("../../../common/out/frontmatter.js");
+const language_ids_js_1 = require("../../../common/out/language_ids.js");
 function epilogCmd_runScript(client) {
     // Parse the content of the active text editor
     const editor = vscode.window.activeTextEditor;
     if (editor) {
         const document = editor.document;
-        if (document.languageId !== 'epilog-script') {
+        if (document.languageId !== language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID) {
             vscode.window.showErrorMessage('Must be an Epilog script file. (I.e. have file extension .epilogscript)');
             return;
         }
@@ -80,8 +81,13 @@ function epilogCmd_runScript(client) {
             vscode.window.showErrorMessage('Query is not a valid epilog query: ' + query);
             return;
         }
-        // Get the 
-        (0, test_common_js_1.test_common)();
+        // Get the dataset file text
+        const datasetFileText = fs.readFileSync(datasetFilepath, 'utf8');
+        //output its frontmatter
+        const frontmatter = (0, frontmatter_js_1.getFrontmatter)(datasetFileText);
+        // Get the ruleset file text
+        //const rulesetFileText = fs.readFileSync(rulesetFilepath, 'utf8');
+        return;
         // For testing
         client.outputChannel.appendLine(datasetFilepath);
         client.outputChannel.appendLine(rulesetFilepath);

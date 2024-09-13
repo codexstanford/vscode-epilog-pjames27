@@ -2,14 +2,18 @@ import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import * as fs from 'fs';
 import * as epilog_js from '../../../common/out/plain-js/epilog.js';
-import { test_common } from '../../../common/out/test_common.js';
+import { getFrontmatter } from '../../../common/out/frontmatter.js';
+
+import {
+    EPILOG_SCRIPT_LANGUAGE_ID
+} from '../../../common/out/language_ids.js';
 
 export function epilogCmd_runScript(client: LanguageClient) {
     // Parse the content of the active text editor
     const editor = vscode.window.activeTextEditor;
     if (editor) {
         const document = editor.document;
-        if (document.languageId !== 'epilog-script') {
+        if (document.languageId !== EPILOG_SCRIPT_LANGUAGE_ID) {
             vscode.window.showErrorMessage('Must be an Epilog script file. (I.e. have file extension .epilogscript)');
             return;
         }
@@ -85,10 +89,14 @@ export function epilogCmd_runScript(client: LanguageClient) {
             return;
         }
 
+        // Get the dataset file text
+        const datasetFileText = fs.readFileSync(datasetFilepath, 'utf8');
+        //output its frontmatter
+        const frontmatter = getFrontmatter(datasetFileText);
+        // Get the ruleset file text
+        //const rulesetFileText = fs.readFileSync(rulesetFilepath, 'utf8');
 
-        // Get the 
-        test_common();
-
+        return;
         // For testing
         client.outputChannel.appendLine(datasetFilepath);
         client.outputChannel.appendLine(rulesetFilepath);

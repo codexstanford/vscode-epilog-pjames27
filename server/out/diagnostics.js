@@ -5,23 +5,23 @@ const node_1 = require("vscode-languageserver/node");
 const fs = require("fs");
 const path = require("path");
 const vscode_uri_1 = require("vscode-uri");
-const frontmatter_1 = require("./frontmatter");
-const constants_1 = require("./constants");
+const frontmatter_js_1 = require("../../common/out/frontmatter.js");
+const language_ids_js_1 = require("../../common/out/language_ids.js");
 // Maps a language id to the set of YAML frontmatter fields that are relevant for files with that language id
 const languageIdToRelevantFields = new Map([
-    [constants_1.EPILOG_LANGUAGE_ID,
+    [language_ids_js_1.EPILOG_LANGUAGE_ID,
         { required: ['metadata'], optional: ['epilog-file-type'] }
     ],
-    [constants_1.EPILOG_RULESET_LANGUAGE_ID,
+    [language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID,
         { required: ['metadata'], optional: ['epilog-file-type'] }
     ],
-    [constants_1.EPILOG_DATASET_LANGUAGE_ID,
+    [language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID,
         { required: ['metadata'], optional: ['epilog-file-type'] }
     ],
-    [constants_1.EPILOG_METADATA_LANGUAGE_ID,
+    [language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID,
         { required: [], optional: ['metadata', 'epilog-file-type'] }
     ],
-    [constants_1.EPILOG_SCRIPT_LANGUAGE_ID,
+    [language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID,
         { required: [], optional: [] }
     ]
 ]);
@@ -44,7 +44,7 @@ function validateDocYamlFrontmatter(textDocument, docText) {
     let frontmatterFieldValues = new Map();
     const requiredFields = languageIdToRelevantFields.get(textDocument.languageId)?.required ?? [];
     // Validate whether there is frontmatter if there are required fields
-    if (!(0, frontmatter_1.hasFrontmatter)(docText)) {
+    if (!(0, frontmatter_js_1.hasFrontmatter)(docText)) {
         if (requiredFields.length > 0) {
             yamlDiagnostics.push({
                 severity: node_1.DiagnosticSeverity.Error,
@@ -60,7 +60,7 @@ function validateDocYamlFrontmatter(textDocument, docText) {
         return [yamlDiagnostics, frontmatterFieldValues];
     }
     // If there is frontmatter, validate its form
-    const frontmatter = (0, frontmatter_1.getFrontmatter)(docText);
+    const frontmatter = (0, frontmatter_js_1.getFrontmatter)(docText);
     const frontmatterLines = frontmatter.split('\n');
     const [fieldDiagnostics, fieldsToValsWithLineNums] = validateFrontmatterLines(frontmatterLines);
     yamlDiagnostics.push(...fieldDiagnostics);
