@@ -9,8 +9,8 @@ import {
     EPILOG_DATASET_LANGUAGE_ID,
     EPILOG_RULESET_LANGUAGE_ID,
     EPILOG_METADATA_LANGUAGE_ID,
-    FILE_EXTENSIONS_TO_LANGUAGE_ID
-} from './language_ids';
+    FILE_EXTENSION_TO_LANGUAGE_ID
+} from './language_ids';    
 
 
 
@@ -30,7 +30,7 @@ export function resolveFullFileContent(filepath: string): string {
     const docText = fs.readFileSync(filepath, 'utf8');
 
     // Get the file language id from the file extension
-    const fileLanguageId = FILE_EXTENSIONS_TO_LANGUAGE_ID.get(fileExtension);
+    const fileLanguageId = FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (fileLanguageId === undefined) {
         console.error(`File type ${fileExtension} does not have an epilog language id: ${filepath}`);
         return "";

@@ -19,7 +19,7 @@ function resolveFullFileContent(filepath) {
     // Get the file content
     const docText = fs.readFileSync(filepath, 'utf8');
     // Get the file language id from the file extension
-    const fileLanguageId = language_ids_1.FILE_EXTENSIONS_TO_LANGUAGE_ID.get(fileExtension);
+    const fileLanguageId = language_ids_1.FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (fileLanguageId === undefined) {
         console.error(`File type ${fileExtension} does not have an epilog language id: ${filepath}`);
         return "";
