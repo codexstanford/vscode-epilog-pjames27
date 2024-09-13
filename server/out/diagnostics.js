@@ -10,16 +10,19 @@ const constants_1 = require("./constants");
 // Maps a language id to the set of YAML frontmatter fields that are relevant for files with that language id
 const languageIdToRelevantFields = new Map([
     [constants_1.EPILOG_LANGUAGE_ID,
-        { required: ['metadata', 'epilog-file-type'], optional: [] }
+        { required: ['metadata'], optional: ['epilog-file-type'] }
     ],
     [constants_1.EPILOG_RULESET_LANGUAGE_ID,
-        { required: ['metadata', 'epilog-file-type'], optional: [] }
+        { required: ['metadata'], optional: ['epilog-file-type'] }
     ],
     [constants_1.EPILOG_DATASET_LANGUAGE_ID,
-        { required: ['metadata', 'epilog-file-type'], optional: [] }
+        { required: ['metadata'], optional: ['epilog-file-type'] }
     ],
     [constants_1.EPILOG_METADATA_LANGUAGE_ID,
-        { required: ['epilog-file-type'], optional: ['metadata'] }
+        { required: [], optional: ['metadata', 'epilog-file-type'] }
+    ],
+    [constants_1.EPILOG_SCRIPT_LANGUAGE_ID,
+        { required: [], optional: [] }
     ]
 ]);
 // Get all the diagnostics for file with an epilog-relevant language id

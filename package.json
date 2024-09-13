@@ -60,6 +60,17 @@
           ".metadata"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "epilog-script",
+        "aliases": [
+          "Epilog Script",
+          "epilog script"
+        ],
+        "extensions": [
+          ".epilogscript"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
@@ -77,6 +88,11 @@
         "language": "epilog-ruleset",
         "scopeName": "source.epilog-ruleset",
         "path": "./syntaxes/epilog-ruleset.tmLanguage.json"
+      },
+      {
+        "language": "epilog-metadata",
+        "scopeName": "source.epilog-metadata",
+        "path": "./syntaxes/epilog-metadata.tmLanguage.json"
       }
     ],
     "configuration": {

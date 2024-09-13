@@ -22,6 +22,7 @@ import {
     EPILOG_RULESET_LANGUAGE_ID,
     EPILOG_DATASET_LANGUAGE_ID,
     EPILOG_METADATA_LANGUAGE_ID,
+    EPILOG_SCRIPT_LANGUAGE_ID
 } from './constants';
 
 type FrontMatterFieldsToValues = Map<string, string[]>;
@@ -29,16 +30,19 @@ type FrontMatterFieldsToValues = Map<string, string[]>;
 // Maps a language id to the set of YAML frontmatter fields that are relevant for files with that language id
 const languageIdToRelevantFields = new Map<string, {required: string[], optional: string[]}>([
     [EPILOG_LANGUAGE_ID, 
-        {required: ['metadata', 'epilog-file-type'], optional: []}
+        {required: ['metadata'], optional: ['epilog-file-type']}
     ],
     [EPILOG_RULESET_LANGUAGE_ID, 
-        {required: ['metadata', 'epilog-file-type'], optional: []}
+        {required: ['metadata'], optional: ['epilog-file-type']}
     ],
     [EPILOG_DATASET_LANGUAGE_ID, 
-        {required: ['metadata', 'epilog-file-type'], optional: []}
+        {required: ['metadata'], optional: ['epilog-file-type']}
     ],
     [EPILOG_METADATA_LANGUAGE_ID, 
-        {required: ['epilog-file-type'], optional: ['metadata']}
+        {required: [], optional: ['metadata', 'epilog-file-type']}
+    ],
+    [EPILOG_SCRIPT_LANGUAGE_ID, 
+        {required: [], optional: []}
     ]
 ]);
 
