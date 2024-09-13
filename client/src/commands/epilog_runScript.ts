@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import * as fs from 'fs';
 import * as epilog_js from '../../../common/out/plain-js/epilog.js';
-import { getFrontmatter } from '../../../common/out/frontmatter.js';
 
 import {
     EPILOG_SCRIPT_LANGUAGE_ID
 } from '../../../common/out/language_ids.js';
+import { resolveFullFileContent } from '../../../common/out/resolve_full_file_content.js';
 
 export function epilogCmd_runScript(client: LanguageClient) {
     // Parse the content of the active text editor
@@ -90,11 +90,14 @@ export function epilogCmd_runScript(client: LanguageClient) {
         }
 
         // Get the dataset file text
-        const datasetFileText = fs.readFileSync(datasetFilepath, 'utf8');
-        //output its frontmatter
-        const frontmatter = getFrontmatter(datasetFileText);
-        // Get the ruleset file text
-        //const rulesetFileText = fs.readFileSync(rulesetFilepath, 'utf8');
+        let fullDatasetFileText = "";
+        
+        // Get the content of the dataset and the ruleset, and the text of the files they inherit from
+        const datasetFileContent = resolveFullFileContent(datasetFilepath);
+        const rulesetFileContent = resolveFullFileContent(rulesetFilepath);
+
+        client.outputChannel.appendLine(datasetFileContent);
+        client.outputChannel.appendLine(rulesetFileContent);
 
         return;
         // For testing
