@@ -20,7 +20,7 @@ function epilogCmd_runScript(client) {
         const lines = docText.split('\n').filter(line => line.trim() !== '');
         // Only three lines should remain
         if (lines.length !== 3) {
-            vscode.window.showErrorMessage('Should only have three lines: one specifying the ruleset file, one specifying the dataset file, and one specifying the query.');
+            vscode.window.showErrorMessage('Should only have three lines: one specifying the ruleset filepath, one specifying the dataset filepath, and one specifying the query.');
             return;
         }
         let datasetFilepath = "";
