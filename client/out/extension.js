@@ -10,6 +10,7 @@ const vscode = require("vscode");
 const vscode_1 = require("vscode");
 const node_1 = require("vscode-languageclient/node");
 const epilog_runScript_1 = require("./commands/epilog_runScript");
+const language_ids_js_1 = require("../../common/out/language_ids.js");
 let client;
 function activate(context) {
     // The server is implemented in node
@@ -34,11 +35,11 @@ function activate(context) {
     const clientOptions = {
         // Register the server for epilog documents
         documentSelector: [
-            { scheme: 'file', language: 'epilog' },
-            { scheme: 'file', language: 'epilog-ruleset' },
-            { scheme: 'file', language: 'epilog-dataset' },
-            { scheme: 'file', language: 'epilog-metadata' },
-            { scheme: 'file', language: 'epilog-script' }
+            { scheme: 'file', language: language_ids_js_1.EPILOG_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID }
         ],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace

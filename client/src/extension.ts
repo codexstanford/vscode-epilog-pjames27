@@ -15,6 +15,7 @@ import {
 } from 'vscode-languageclient/node';
 
 import { epilogCmd_runScript } from './commands/epilog_runScript';
+import { EPILOG_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID } from '../../common/out/language_ids.js';
 
 let client: LanguageClient;
 
@@ -47,11 +48,11 @@ export function activate(context: ExtensionContext) {
 	const clientOptions: LanguageClientOptions = {
 		// Register the server for epilog documents
 		documentSelector: [
-			{ scheme: 'file', language: 'epilog' },
-			{ scheme: 'file', language: 'epilog-ruleset' },
-			{ scheme: 'file', language: 'epilog-dataset' },
-			{ scheme: 'file', language: 'epilog-metadata' },
-			{ scheme: 'file', language: 'epilog-script' }
+			{ scheme: 'file', language: EPILOG_LANGUAGE_ID },
+			{ scheme: 'file', language: EPILOG_RULESET_LANGUAGE_ID },
+			{ scheme: 'file', language: EPILOG_DATASET_LANGUAGE_ID },
+			{ scheme: 'file', language: EPILOG_METADATA_LANGUAGE_ID },
+			{ scheme: 'file', language: EPILOG_SCRIPT_LANGUAGE_ID }
 		],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
