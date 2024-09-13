@@ -4883,5 +4883,4 @@ function getrelations (datum,rs)
 
 module.exports = {
     readdata: readdata,
-
 }

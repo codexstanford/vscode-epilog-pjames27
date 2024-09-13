@@ -3,7 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.epilogCmd_runScript = void 0;
 const vscode = require("vscode");
 const fs = require("fs");
-const epilog_js = require("../plain-js/epilog");
+const epilog_js = require("../../../common/out/plain-js/epilog.js");
+const test_common_js_1 = require("../../../common/out/test_common.js");
 function epilogCmd_runScript(client) {
     // Parse the content of the active text editor
     const editor = vscode.window.activeTextEditor;
@@ -80,6 +81,7 @@ function epilogCmd_runScript(client) {
             return;
         }
         // Get the 
+        (0, test_common_js_1.test_common)();
         // For testing
         client.outputChannel.appendLine(datasetFilepath);
         client.outputChannel.appendLine(rulesetFilepath);

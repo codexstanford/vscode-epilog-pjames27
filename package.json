@@ -126,9 +126,9 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -b",
-    "watch": "tsc -b -w",
-    "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+    "compile": "tsc -b ./client ./server ./common",
+    "watch": "tsc -b -w ./client ./server ./common",
+    "postinstall": "cd client && npm install && cd ../server && npm install && cd ../common && npm install && cd .."
   },
   "devDependencies": {
     "@types/mocha": "^9.1.0",

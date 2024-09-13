@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { LanguageClient } from 'vscode-languageclient/node';
 import * as fs from 'fs';
-import * as epilog_js from '../plain-js/epilog';
+import * as epilog_js from '../../../common/out/plain-js/epilog.js';
+import { test_common } from '../../../common/out/test_common.js';
 
 export function epilogCmd_runScript(client: LanguageClient) {
     // Parse the content of the active text editor
@@ -86,6 +87,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
 
 
         // Get the 
+        test_common();
 
         // For testing
         client.outputChannel.appendLine(datasetFilepath);
