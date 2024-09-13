@@ -7569,6 +7569,11 @@ function getrelations(datum, rs) {
 // End
 //==============================================================================
 module.exports = {
+    read: read,
     readdata: readdata,
+    grindem: grindem,
+    compfinds: compfinds,
+    definemorefacts: definemorefacts,
+    definemorerules: definemorerules
 };
 //# sourceMappingURL=epilog.js.map

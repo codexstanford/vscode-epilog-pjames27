@@ -84,26 +84,22 @@ export function epilogCmd_runScript(client: LanguageClient) {
         }
 
         // Verify that the query is a valid epilog query
-        if (epilog_js.readdata(query).length === 0) {
+        if (epilog_js.read(query) === "error") {
             vscode.window.showErrorMessage('Query is not a valid epilog query: ' + query);
             return;
         }
 
-        // Get the dataset file text
-        let fullDatasetFileText = "";
         
         // Get the content of the dataset and the ruleset, and the text of the files they inherit from
         const datasetFileContent = resolveFullFileContent(datasetFilepath);
         const rulesetFileContent = resolveFullFileContent(rulesetFilepath);
 
-        client.outputChannel.appendLine(datasetFileContent);
-        client.outputChannel.appendLine(rulesetFileContent);
+        const dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
+        const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
+        // Run the query on the dataset and the ruleset
+        const queryResult = epilog_js.compfinds(epilog_js.read(query), epilog_js.read(query), dataset, ruleset);
 
-        return;
-        // For testing
-        client.outputChannel.appendLine(datasetFilepath);
-        client.outputChannel.appendLine(rulesetFilepath);
-        client.outputChannel.appendLine(query);
-
+        // Print the query result to the output channel
+        client.outputChannel.appendLine("---\nQuery results: \n" + epilog_js.grindem(queryResult));
     }
 }

@@ -4882,5 +4882,11 @@ function getrelations (datum,rs)
 //==============================================================================
 
 module.exports = {
+    read: read,
     readdata: readdata,
+    grindem: grindem,
+    compfinds: compfinds,
+    definemorefacts: definemorefacts,
+    definemorerules: definemorerules
+    
 }
