@@ -96,21 +96,24 @@ function epilogCmd_runScript(client) {
             let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
             const queryResult = epilog_js.compfinds(epilog_js.read(query), epilog_js.read(query), dataset, ruleset);
             // Print the query result to the output channel
-            client.outputChannel.appendLine("------\nQuery results: \n" + epilog_js.grindem(queryResult));
+            client.outputChannel.appendLine("------\nQuery results for file \'" + datasetRelFilepath + "\': \n" + epilog_js.grindem(queryResult));
+            return;
         }
         // Otherwise, run the query on each of the .hdf files in the folder 
-        else {
-            client.outputChannel.appendLine("------\nQuery results for folder \'" + datasetRelFilepath + "\':");
-            // Get each of the .hdf files in the folder
-            const datasetFileList = fs.readdirSync(datasetAbsFilepath).filter(file => file.endsWith('.hdf'));
-            for (const datasetFilePath of datasetFileList) {
-                // Get the content of the dataset
-                const datasetFileContent = (0, resolve_full_file_content_js_1.resolveFullFileContent)(datasetAbsFilepath + '\\' + datasetFilePath);
-                let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
-                const queryResult = epilog_js.compfinds(epilog_js.read(query), epilog_js.read(query), dataset, ruleset);
-                // Print the query result to the output channel
-                client.outputChannel.appendLine("---\nResults for file \'" + datasetFilePath + "\': \n" + epilog_js.grindem(queryResult));
-            }
+        client.outputChannel.appendLine("------\nQuery results for folder \'" + datasetRelFilepath + "\':");
+        // Get each of the .hdf files in the folder
+        const datasetFileList = fs.readdirSync(datasetAbsFilepath).filter(file => file.endsWith('.hdf'));
+        if (datasetFileList.length === 0) {
+            client.outputChannel.appendLine("Folder contains no .hdf files.");
+            return;
+        }
+        for (const datasetFilePath of datasetFileList) {
+            // Get the content of the dataset
+            const datasetFileContent = (0, resolve_full_file_content_js_1.resolveFullFileContent)(datasetAbsFilepath + '\\' + datasetFilePath);
+            let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
+            const queryResult = epilog_js.compfinds(epilog_js.read(query), epilog_js.read(query), dataset, ruleset);
+            // Print the query result to the output channel
+            client.outputChannel.appendLine("---\nResults for file \'" + datasetFilePath + "\': \n" + epilog_js.grindem(queryResult));
         }
     }
 }
