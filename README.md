@@ -1,6 +1,6 @@
 # Epilog README
 
-A Language Server extension which provides language support for Epilog, the logic programming language developed at Stanford University and used in Michael Genesereth's CS 151 course.
+A Language Server extension which provides language support for Epilog, the logic programming language developed at Stanford University and used in Prof. Michael Genesereth's CS 151 course.
 
 ## Features
 
@@ -8,11 +8,23 @@ A Language Server extension which provides language support for Epilog, the logi
 
 ## Usage Notes
 
-- A .hdf file should only contain a dataset
-- A .hrf file should only contain a ruleset
+
+### File types
+- A .hdf file should only contain a dataset.
+- A .hrf file should only contain a ruleset.
 - A .epilog file can contain both rulesets and datasets. Each must be wrapped in curly braces and have the corresponding prefix, as in the following screenshot. This must be done even if only one dataset or ruleset is present in the file.
 
 ![.epilog Formatting Example](/documentation_images/epilog%20formatting%20example.png)
+
+- A .epilogscript file should contain the three lines below, in any order. The query can be executed on the specified ruleset and dataset(s) by running the "Epilog: Run Script" command from the .epilogscript file. The results will be printed to the "Epilog Language Server" output channel.
+    - dataset: <filepath> (to a single file or to a folder containing one or more .hdf files)
+    - ruleset: <filepath> (to a single file)
+    - query: <query>
+    
+### Running queries
+- See the information on the .epilogscript file type above.
+
+### YAML Frontmatter
 
 ## Extension Settings
 
@@ -20,9 +32,15 @@ No extension settings are currently contributed/implemented.
 
 ## Known Issues
 
-- A baseline Language Server is implemented, but does not currently provide any desired functionality. Only toy features from the VSCode [Language Server Extension Guide](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide) tutorial are currently implemented.
+- There are no known issues at this time.
 
 ## Release Notes
+
+### 0.1.0
+- Added functionality to run Epilog queries.
+    - Implented via the new .epilogscript file type, and the "Epilog: Run Script" command.
+- Can now specify metadata files relevant to a dataset or ruleset using YAML frontmatter.
+- Added basic functionality to validate .hdf and .hrf files against metadata. (TODO - only allows specifying metadata file right now, doesn't yet make use of its data)
 
 ### 0.0.3
 - Fixed bug that caused incorrect syntax highlighting for inline comments in datasets.
