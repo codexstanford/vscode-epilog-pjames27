@@ -14,10 +14,10 @@ const epilog_js = require("../../../common/out/plain-js/epilog.js");
 // - Errors if there is no line specifying the ruleset filepath
 // - Errors if there is no line specifying the query
 // - Errors if there are multiple lines specifying any of the above
-// - Warnings if the dataset filepath does not have the correct extension
-// - Warnings if the ruleset filepath does not have the correct extension
-// - Errors if the dataset filepath does not point to an existing file
+// - Errors if the dataset filepath does not point to an existing file or folder
 // - Errors if the ruleset filepath does not point to an existing file
+// - Warnings if the dataset filepath points to a file and does not have the correct extension
+// - Warnings if the ruleset filepath does not have the correct extension
 // - Errors if the query is not a valid Epilog query
 function validateDocWithFiletype_EpilogScript(textDocument, docText) {
     let diagnostics = [];
@@ -113,20 +113,9 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
         console.error('Missing dataset file extension - not defined in language_ids.ts');
         return diagnostics;
     }
-    // Check that the dataset filepath has the right extension and that it points to a file that exists
+    // Check that the dataset filepath points to a file or folder that exists, and if it is a file, that it has the correct extension
     for (const datasetLineIndex of datasetLineIndices) {
         const datasetAbsPath = path.join(documentDir, allLines[datasetLineIndex].split(':')[1].trim());
-        if (!datasetAbsPath.endsWith(datasetExt)) {
-            diagnostics.push({
-                severity: vscode_languageserver_1.DiagnosticSeverity.Warning,
-                range: {
-                    start: { line: datasetLineIndex, character: 'dataset:'.length },
-                    end: { line: datasetLineIndex, character: Number.MAX_VALUE }
-                },
-                message: 'Dataset files should have the ' + datasetExt + ' extension: ' + datasetAbsPath,
-                source: 'epilog'
-            });
-        }
         if (!fs.existsSync(datasetAbsPath)) {
             diagnostics.push({
                 severity: vscode_languageserver_1.DiagnosticSeverity.Error,
@@ -134,9 +123,36 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
                     start: { line: datasetLineIndex, character: 'dataset:'.length },
                     end: { line: datasetLineIndex, character: Number.MAX_VALUE }
                 },
-                message: 'Dataset file doesn\'t exist: ' + datasetAbsPath,
+                message: 'Dataset file or folder doesn\'t exist: ' + datasetAbsPath,
                 source: 'epilog'
             });
+        }
+        // Get the file extension of the dataset file
+        const datasetAbsPathExt = path.extname(datasetAbsPath);
+        // If it isn't obviously a folder, then check that it has the correct extension
+        if (!datasetAbsPath.endsWith("\\")) {
+            if (datasetAbsPathExt === "") {
+                diagnostics.push({
+                    severity: vscode_languageserver_1.DiagnosticSeverity.Warning,
+                    range: {
+                        start: { line: datasetLineIndex, character: 'dataset:'.length },
+                        end: { line: datasetLineIndex, character: Number.MAX_VALUE }
+                    },
+                    message: 'Dataset files should have the ' + datasetExt + ' extensions, folders should end with a backslash: ' + datasetAbsPath,
+                    source: 'epilog'
+                });
+            }
+            else if (datasetAbsPathExt !== datasetExt) {
+                diagnostics.push({
+                    severity: vscode_languageserver_1.DiagnosticSeverity.Warning,
+                    range: {
+                        start: { line: datasetLineIndex, character: 'dataset:'.length },
+                        end: { line: datasetLineIndex, character: Number.MAX_VALUE }
+                    },
+                    message: 'Dataset files should have the ' + datasetExt + ' extensions: ' + datasetAbsPath,
+                    source: 'epilog'
+                });
+            }
         }
     }
     const rulesetExt = language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID) ?? '';
