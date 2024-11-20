@@ -110,7 +110,7 @@ function validateDocYamlFrontmatter(
         return [yamlDiagnostics, frontmatterFieldValues];
     }
 
-    // If there is frontmatter, validate its form
+    // If there is frontmatter, validate its syntactic form
     const frontmatter = getFrontmatter(docText);
     const frontmatterLines = frontmatter.split('\n');
     
@@ -197,7 +197,7 @@ function validateAndParseFrontmatterLines(frontmatterLines: string[]): [Diagnost
                 });
                 continue;
             }
-                // If it is a value, then it must come after a field
+                // If the line is a value, then it must come after a field
             if (currentField === null) {
                 // Warn that there is a value without a field
                 fieldDiagnostics.push({

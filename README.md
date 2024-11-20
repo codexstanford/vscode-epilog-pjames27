@@ -33,15 +33,16 @@ No extension settings are currently contributed/implemented.
 ## Known Issues
 
 - Metadata validation is not yet implemented.
-- Cycles referenced .hdf, .hrf, and .metadata files are not yet detected.
 
 ## Release Notes
 
 ### 0.1.0
 - Added functionality to run Epilog queries.
-    - Implemented via the new .epilogscript file type, and the "Epilog: Run Script" command.
+    - Implemented via the new .epilogscript file type and the "Epilog: Run Script" command.
+    - Rulesets and datasets can reference other rulesets and datasets, respectively. When running a query, the transitive closure of the contents of the referenced files are used.
+        - Cycles are automatically detected and reported to the Client's debug console. Execution of the query continues regardless.
 - Can now specify metadata files relevant to a dataset or ruleset using YAML frontmatter.
-- Preparation to add basic functionality to validate .hdf and .hrf files against metadata. (i.e. only allows specifying metadata file right now, doesn't yet make use of the metadatafile contents)
+- Preparation to add basic functionality to validate .hdf and .hrf files against metadata. (I.e. currently allows specifying metadata files, but doesn't yet make use of the metadata file contents.)
 
 ### 0.0.3
 - Fixed bug that caused incorrect syntax highlighting for inline comments in datasets.

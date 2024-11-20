@@ -96,6 +96,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
         
         // Get the content of the ruleset
         const rulesetFileContent = resolveFullFileContent(rulesetAbsFilepath);
+        // console.log("Full file content: \n" + rulesetFileContent);
         
         const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
         // Run the query on the dataset and the ruleset
@@ -104,6 +105,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
         if (!fs.lstatSync(datasetAbsFilepath).isDirectory()) {
             // Get the content of the dataset
             const datasetFileContent = resolveFullFileContent(datasetAbsFilepath);
+            //console.log("Full file content: \n" + datasetFileContent);
             let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
             const queryResult = epilog_js.compfinds(epilog_js.read(query), epilog_js.read(query), dataset, ruleset);
             // Print the query result to the output channel
