@@ -30,19 +30,25 @@ import { validateDocWithFiletype_EpilogScript } from './diagnostics/validate_epi
 
 type FrontMatterFieldsToValues = Map<string, string[]>;
 
+const frontmatterFieldNamesToFileExtensions = new Map<string, string>([
+    ['metadata', '.metadata'],
+    ['rules', '.hrf'],
+    ['data', '.hdf']
+]);
+
 // Maps a language id to the set of YAML frontmatter fields that are relevant for files with that language id
 const languageIdToRelevantFields = new Map<string, {required: string[], optional: string[]}>([
     [EPILOG_LANGUAGE_ID, 
-        {required: [], optional: ['metadata', 'epilog-file-type']}
+        {required: [], optional: ['metadata']}
     ],
     [EPILOG_RULESET_LANGUAGE_ID, 
-        {required: [], optional: ['metadata', 'epilog-file-type']}
+        {required: [], optional: ['metadata', 'rules']}
     ],
     [EPILOG_DATASET_LANGUAGE_ID, 
-        {required: [], optional: ['metadata', 'epilog-file-type']}
+        {required: [], optional: ['metadata', 'data']}
     ],
     [EPILOG_METADATA_LANGUAGE_ID, 
-        {required: [], optional: ['metadata', 'epilog-file-type']}
+        {required: [], optional: ['metadata']}
     ],
     [EPILOG_SCRIPT_LANGUAGE_ID, 
         {required: [], optional: []}
@@ -135,11 +141,13 @@ function validateDocYamlFrontmatter(
     const optionalFields = languageIdToRelevantFields.get(textDocument.languageId)?.optional ?? [];
     const relevantFields = new Set([...requiredFields, ...optionalFields]);
     
-    // Validate the metadata field values
-    if (relevantFields.has('metadata') && fieldsToValsWithLineNums.has('metadata')) {
-        const [metadataValueDiagnostics, updatedFrontmatterFieldValues] = validateFrontmatterValues_metadata(textDocument, frontmatterLines, fieldsToValsWithLineNums.get('metadata') ?? [], frontmatterFieldValues);
-        yamlDiagnostics.push(...metadataValueDiagnostics);
-        frontmatterFieldValues = updatedFrontmatterFieldValues;
+    for (const fieldName of relevantFields) {
+        // If values for the field should be files, validate them
+        if (frontmatterFieldNamesToFileExtensions.has(fieldName)) {
+            const [valueDiagnostics, updatedFrontmatterFieldValues] = validateFrontmatterValues_files(textDocument, frontmatterLines, fieldName, fieldsToValsWithLineNums.get(fieldName) ?? [], frontmatterFieldValues);
+            yamlDiagnostics.push(...valueDiagnostics);
+            frontmatterFieldValues = updatedFrontmatterFieldValues;
+        }
     }
 
     return [yamlDiagnostics, frontmatterFieldValues];
@@ -232,33 +240,43 @@ function validateAndParseFrontmatterLines(frontmatterLines: string[]): [Diagnost
     return [fieldDiagnostics, fieldsToValsWithLineNums];
 }
 
-function validateFrontmatterValues_metadata(
+// Validate that the frontmatter field values point to real files, and that they have the proper file extension
+function validateFrontmatterValues_files(
     textDocument: TextDocument,
     frontmatterLines: string[],
-    metadataValsWithLineNums: [string, number][],
+    fieldName: string,
+    fieldValuesWithLineNums: [string, number][],
     frontmatterFieldValues: FrontMatterFieldsToValues,
 ): [Diagnostic[], FrontMatterFieldsToValues] {
 
-    let metadataValueDiagnostics: Diagnostic[] = [];
-    // Add the metadata field values to the frontmatter field values
-    frontmatterFieldValues.set('metadata', []);
+    let valueDiagnostics: Diagnostic[] = [];
+    // Add the fieldname field values to the frontmatter field values
+    frontmatterFieldValues.set(fieldName, []);
 
     // Convert the textDocument uri to a filepath
     const documentDir = path.dirname(URI.parse(textDocument.uri).fsPath);
 
-    // Validate the metadata field values
-    for (const [filepath, lineNumber] of metadataValsWithLineNums) {
-        // Check that the value is a valid metadata file
-            // Does it end in .metadata
-        if (!filepath.endsWith('.metadata')) {
+    const expectedExtension = frontmatterFieldNamesToFileExtensions.get(fieldName);
+
+    if (expectedExtension === undefined) {
+        console.error("Values for frontmatter field " + fieldName + " should not be files.");
+        return [valueDiagnostics, frontmatterFieldValues];
+    }
+
+    // Validate the fieldname field values
+    for (const [filepath, lineNumber] of fieldValuesWithLineNums) {
+        // Check that the value is a valid file of its type
+        
+        // Check its extension
+        if (!filepath.endsWith(expectedExtension)) {
             let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
-            metadataValueDiagnostics.push({
+            valueDiagnostics.push({
                 severity: DiagnosticSeverity.Error,
                 range: {
                     start: {line: lineNumber, character: startIndex},
                     end: {line: lineNumber, character: startIndex + filepath.length}
                 },
-                message: 'Filepath doesn\'t point to a .metadata file',
+                message: 'Filepath doesn\'t point to a ' + expectedExtension + ' file',
                 source: 'epilog'
             });
             continue;
@@ -267,7 +285,7 @@ function validateFrontmatterValues_metadata(
         let absPath = path.join(documentDir, filepath);
         if (!fs.existsSync(absPath)) {
             let startIndex = frontmatterLines[lineNumber].indexOf(filepath);
-            metadataValueDiagnostics.push({
+            valueDiagnostics.push({
                 severity: DiagnosticSeverity.Error,
                 range: {
                     start: {line: lineNumber, character: startIndex},
@@ -278,12 +296,11 @@ function validateFrontmatterValues_metadata(
             });
             continue;
         }
-        // It exists and is a valid metadata file, so add it to the frontmatter field values
-        frontmatterFieldValues.get('metadata')?.push(absPath);
+        // The file exists and is a valid file of the expected type, so add it to the frontmatter field values
+        frontmatterFieldValues.get(fieldName)?.push(absPath);
     }
-    return [metadataValueDiagnostics, frontmatterFieldValues];
+    return [valueDiagnostics, frontmatterFieldValues];
 }
-
 
 // Validates the file against all specified metadata files (TODO)
 function validateDocAgainstMetadata(

@@ -32,7 +32,8 @@ No extension settings are currently contributed/implemented.
 
 ## Known Issues
 
-- There are no known issues at this time.
+- Metadata validation is not yet implemented.
+- Cycles referenced .hdf, .hrf, and .metadata files are not yet detected.
 
 ## Release Notes
 
