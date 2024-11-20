@@ -24,7 +24,7 @@ A Language Server extension which provides language support for Epilog, the logi
 ### Running queries
 - See the information on the .epilogscript file type above.
 
-### YAML Frontmatter
+### YAML Frontmatter (TODO)
 
 ## Extension Settings
 
@@ -38,9 +38,9 @@ No extension settings are currently contributed/implemented.
 
 ### 0.1.0
 - Added functionality to run Epilog queries.
-    - Implented via the new .epilogscript file type, and the "Epilog: Run Script" command.
+    - Implemented via the new .epilogscript file type, and the "Epilog: Run Script" command.
 - Can now specify metadata files relevant to a dataset or ruleset using YAML frontmatter.
-- Added basic functionality to validate .hdf and .hrf files against metadata. (TODO - only allows specifying metadata file right now, doesn't yet make use of its data)
+- Preparation to add basic functionality to validate .hdf and .hrf files against metadata. (i.e. only allows specifying metadata file right now, doesn't yet make use of the metadatafile contents)
 
 ### 0.0.3
 - Fixed bug that caused incorrect syntax highlighting for inline comments in datasets.

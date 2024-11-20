@@ -33,13 +33,13 @@ type FrontMatterFieldsToValues = Map<string, string[]>;
 // Maps a language id to the set of YAML frontmatter fields that are relevant for files with that language id
 const languageIdToRelevantFields = new Map<string, {required: string[], optional: string[]}>([
     [EPILOG_LANGUAGE_ID, 
-        {required: ['metadata'], optional: ['epilog-file-type']}
+        {required: [], optional: ['metadata', 'epilog-file-type']}
     ],
     [EPILOG_RULESET_LANGUAGE_ID, 
-        {required: ['metadata'], optional: ['epilog-file-type']}
+        {required: [], optional: ['metadata', 'epilog-file-type']}
     ],
     [EPILOG_DATASET_LANGUAGE_ID, 
-        {required: ['metadata'], optional: ['epilog-file-type']}
+        {required: [], optional: ['metadata', 'epilog-file-type']}
     ],
     [EPILOG_METADATA_LANGUAGE_ID, 
         {required: [], optional: ['metadata', 'epilog-file-type']}
@@ -87,7 +87,7 @@ function validateDocYamlFrontmatter(
 
     const requiredFields = languageIdToRelevantFields.get(textDocument.languageId)?.required ?? [];
 
-    // Validate whether there is frontmatter if there are required fields
+    // If there are required fields, validate whether there is frontmatter
     if (!hasFrontmatter(docText)) {
         if (requiredFields.length > 0) {
             yamlDiagnostics.push({
@@ -108,7 +108,7 @@ function validateDocYamlFrontmatter(
     const frontmatter = getFrontmatter(docText);
     const frontmatterLines = frontmatter.split('\n');
     
-    const [fieldDiagnostics, fieldsToValsWithLineNums] = validateFrontmatterLines(frontmatterLines);
+    const [fieldDiagnostics, fieldsToValsWithLineNums] = validateAndParseFrontmatterLines(frontmatterLines);
     yamlDiagnostics.push(...fieldDiagnostics);
     
     // Validate that all required fields are present
@@ -135,6 +135,7 @@ function validateDocYamlFrontmatter(
     const optionalFields = languageIdToRelevantFields.get(textDocument.languageId)?.optional ?? [];
     const relevantFields = new Set([...requiredFields, ...optionalFields]);
     
+    // Validate the metadata field values
     if (relevantFields.has('metadata') && fieldsToValsWithLineNums.has('metadata')) {
         const [metadataValueDiagnostics, updatedFrontmatterFieldValues] = validateFrontmatterValues_metadata(textDocument, frontmatterLines, fieldsToValsWithLineNums.get('metadata') ?? [], frontmatterFieldValues);
         yamlDiagnostics.push(...metadataValueDiagnostics);
@@ -145,13 +146,19 @@ function validateDocYamlFrontmatter(
 }
 
 
-// Parses the frontmatter and returns a list of diagnostics and a map of the fields to a tuple containing (their values, and the line numbers of those values)
-// The map is of the form {fieldName: [value, line number]}
+// Parses the frontmatter and returns a list of diagnostics and a map of the fields to lists of tuples, where the tuples contain (the field values, the line numbers of those values)
+// The map is of the form {fieldName: [value, line number][]}
 // Generates the following diagnostics:
 // - Warnings for duplicate fields
 // - Warnings for invalid lines in the frontmatter (i.e. neither a field nor a value)
 // - Warnings for values preceding fields
-function validateFrontmatterLines(frontmatterLines: string[]): [Diagnostic[], Map<string, [string, number][]>] {
+// Fields and values are formatted like:
+// field name:
+//    - value1
+//    - value2
+//    - ...
+// "
+function validateAndParseFrontmatterLines(frontmatterLines: string[]): [Diagnostic[], Map<string, [string, number][]>] {
     let fieldDiagnostics: Diagnostic[] = [];
     let fieldsToValsWithLineNums = new Map<string, [string, number][]>();
     let currentField: string | null = null;
@@ -159,7 +166,7 @@ function validateFrontmatterLines(frontmatterLines: string[]): [Diagnostic[], Ma
     // Ignore the first and last lines, since they are the frontmatter delimiters
     for (let i = 1; i < frontmatterLines.length - 1; i++) {
         const line = frontmatterLines[i];
-        // Check if the line is a field
+        // Check if the line is a field, i.e. a whitespace-free string ending with a colon, then any whitespace
         const field = line.match(/^[^\s:]+:\s*$/);
         if (field === null) {
             // If not, must be either an empty line or a value
@@ -278,7 +285,7 @@ function validateFrontmatterValues_metadata(
 }
 
 
-// Validates the file against all specified metadata files
+// Validates the file against all specified metadata files (TODO)
 function validateDocAgainstMetadata(
     textDocument: TextDocument,
     docText: string,
