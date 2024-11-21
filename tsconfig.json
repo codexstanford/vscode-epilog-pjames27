@@ -5,16 +5,17 @@
 		"lib": ["es2020"],
 		"outDir": "out",
 		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": true,
+		"allowJs": true,
+		"composite": true
 	},
-	"include": [
-		"src"
-	],
+	"include": ["src"],
 	"exclude": [
 		"node_modules"
 	],
 	"references": [
 		{ "path": "./client" },
-		{ "path": "./server" }
+		{ "path": "./server" },
+		{ "path": "./common" }
 	]
 }

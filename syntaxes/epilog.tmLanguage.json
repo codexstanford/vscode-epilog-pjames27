@@ -3,6 +3,7 @@
 	"scopeName": "source.epilog",
 	"name": "Epilog",
 	"patterns": [
+		{"include": "#frontmatter"},
 		{"include": "#dataset"},
 		{"include": "#ruleset"}
 	],
@@ -193,6 +194,28 @@
 		"comment": {
 			"name": "comment.line.percentage",
 			"match": "[%].*\n"
+		},
+
+		"frontmatter": {
+			"name": "comment.block.frontmatter.epilog",
+			"begin": "^---",
+			"end": "^---",
+			"patterns": [
+				{
+					"name": "frontmatter.key",
+					"match": "[a-zA-Z0-9_.]+\\s*:\\s*",
+					"captures": {
+						"1": { "name": "frontmatter.key" }
+					}
+				},
+				{
+					"name": "frontmatter.value",
+					"match": "[^\\s].*",
+					"captures": {
+						"1": { "name": "frontmatter.value" }
+					}
+				}
+			]
 		}
 
 

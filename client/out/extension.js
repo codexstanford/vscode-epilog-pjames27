@@ -6,8 +6,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const path = require("path");
+const vscode = require("vscode");
 const vscode_1 = require("vscode");
 const node_1 = require("vscode-languageclient/node");
+const epilog_runScript_1 = require("./commands/epilog_runScript");
+const epilog_gather_1 = require("./commands/epilog_gather");
+const language_ids_js_1 = require("../../common/out/language_ids.js");
 let client;
 function activate(context) {
     // The server is implemented in node
@@ -31,14 +35,29 @@ function activate(context) {
     // Options to control the language client
     const clientOptions = {
         // Register the server for epilog documents
-        documentSelector: [{ scheme: 'file', language: 'epilog' }, { scheme: 'file', language: 'epilog-ruleset' }],
+        documentSelector: [
+            { scheme: 'file', language: language_ids_js_1.EPILOG_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID }
+        ],
         synchronize: {
             // Notify the server about file changes to '.clientrc files contained in the workspace
             fileEvents: vscode_1.workspace.createFileSystemWatcher('**/.clientrc')
-        }
+        },
+        outputChannel: vscode.window.createOutputChannel('Epilog Language Server')
     };
     // Create the language client and start the client.
     client = new node_1.LanguageClient('epilogLanguageServer', 'Epilog Language Server', serverOptions, clientOptions);
+    let disposable = vscode.commands.registerCommand('epilog.runScript', () => {
+        (0, epilog_runScript_1.epilogCmd_runScript)(client);
+    });
+    let disposable2 = vscode.commands.registerCommand('epilog.gather', () => {
+        (0, epilog_gather_1.epilogCmd_gather)(client);
+    });
+    context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable2);
     // Start the client. This will also launch the server
     client.start();
     console.log("client started");

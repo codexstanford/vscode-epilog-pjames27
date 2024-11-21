@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * ------------------------------------------------------------------------------------------ */
 const node_1 = require("vscode-languageserver/node");
 const vscode_languageserver_textdocument_1 = require("vscode-languageserver-textdocument");
+const diagnostics_1 = require("./diagnostics");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = (0, node_1.createConnection)(node_1.ProposedFeatures.all);
@@ -94,55 +95,14 @@ documents.onDidChangeContent(change => {
     validateTextDocument(change.document);
 });
 async function validateTextDocument(textDocument) {
-    // In this simple example we get the settings for every validate run.
-    const settings = await getDocumentSettings(textDocument.uri);
-    // The validator creates diagnostics for all uppercase words length 2 and more
-    const text = textDocument.getText();
-    const pattern = /\b[A-Z]{2,}\b/g;
-    let m;
-    let problems = 0;
-    const diagnostics = [];
+    //const docText = textDocument.getText();
+    //const docSettings = await getDocumentSettings(textDocument.uri);
+    const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument);
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-    // Right now, disable this for Epilog
-    /*
-    while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-        problems++;
-        const diagnostic: Diagnostic = {
-            severity: DiagnosticSeverity.Warning,
-            range: {
-                start: textDocument.positionAt(m.index),
-                end: textDocument.positionAt(m.index + m[0].length)
-            },
-            message: `${m[0]} is all uppercase.`,
-            source: 'ex'
-        };
-        if (hasDiagnosticRelatedInformationCapability) {
-            diagnostic.relatedInformation = [
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnostic.range)
-                    },
-                    message: 'Spelling matters'
-                },
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnostic.range)
-                    },
-                    message: 'Particularly for names'
-                }
-            ];
-        }
-        diagnostics.push(diagnostic);
-    }
-
-    // Send the computed diagnostics to VSCode.
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });*/
 }
 connection.onDidChangeWatchedFiles(_change => {
     // Monitored files have change in VSCode
-    connection.console.log('We received an file change event');
+    connection.console.log('We received a file change event');
 });
 // This handler provides the initial list of the completion items.
 connection.onCompletion((_textDocumentPosition) => {
