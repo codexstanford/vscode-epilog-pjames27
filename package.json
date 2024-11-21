@@ -122,6 +122,10 @@
       {
         "command": "epilog.runScript",
         "title": "Run Epilog Script"
+      },
+      {
+        "command": "epilog.gather",
+        "title": "Gather referenced Epilog files"
       }
     ]
   },

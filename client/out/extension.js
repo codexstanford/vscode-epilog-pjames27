@@ -10,6 +10,7 @@ const vscode = require("vscode");
 const vscode_1 = require("vscode");
 const node_1 = require("vscode-languageclient/node");
 const epilog_runScript_1 = require("./commands/epilog_runScript");
+const epilog_gather_1 = require("./commands/epilog_gather");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
 let client;
 function activate(context) {
@@ -52,7 +53,11 @@ function activate(context) {
     let disposable = vscode.commands.registerCommand('epilog.runScript', () => {
         (0, epilog_runScript_1.epilogCmd_runScript)(client);
     });
+    let disposable2 = vscode.commands.registerCommand('epilog.gather', () => {
+        (0, epilog_gather_1.epilogCmd_gather)(client);
+    });
     context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable2);
     // Start the client. This will also launch the server
     client.start();
     console.log("client started");

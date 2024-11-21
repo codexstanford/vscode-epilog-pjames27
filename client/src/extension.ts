@@ -15,6 +15,7 @@ import {
 } from 'vscode-languageclient/node';
 
 import { epilogCmd_runScript } from './commands/epilog_runScript';
+import { epilogCmd_gather } from './commands/epilog_gather';
 import { EPILOG_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID } from '../../common/out/language_ids.js';
 
 let client: LanguageClient;
@@ -73,8 +74,12 @@ export function activate(context: ExtensionContext) {
 		epilogCmd_runScript(client);
 	});
 
+	let disposable2 = vscode.commands.registerCommand('epilog.gather', () => {
+		epilogCmd_gather(client);
+	});
+
 	context.subscriptions.push(disposable);
-	
+	context.subscriptions.push(disposable2);
 	// Start the client. This will also launch the server
 	client.start();
 	console.log("client started");

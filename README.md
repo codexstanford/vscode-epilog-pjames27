@@ -39,8 +39,11 @@ No extension settings are currently contributed/implemented.
 ### 0.1.0
 - Added functionality to run Epilog queries.
     - Implemented via the new .epilogscript file type and the "Epilog: Run Script" command.
-    - Rulesets and datasets can reference other rulesets and datasets, respectively. When running a query, the transitive closure of the contents of the referenced files are used.
-        - Cycles are automatically detected and reported to the Client's debug console. Execution of the query continues regardless.
+- Rulesets and datasets can reference other rulesets and datasets, respectively. When running a query, the transitive closure of the contents of the referenced files are used.
+    - Cycles are automatically detected and reported to the Client debug console. Execution of the query continues regardless.
+- Added functionality to gather content from referenced files into a single file.
+    - Implemented via the "Epilog: Gather" command.
+        - The user is prompted to enter the filename where the gathered file contents will be saved.
 - Can now specify metadata files relevant to a dataset or ruleset using YAML frontmatter.
 - Preparation to add basic functionality to validate .hdf and .hrf files against metadata. (I.e. currently allows specifying metadata files, but doesn't yet make use of the metadata file contents.)
 
