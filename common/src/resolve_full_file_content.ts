@@ -33,7 +33,7 @@ export function resolveFullFileContent(filepath: string): string {
     // Get the file language id from the file extension for the initial file
     const initialFileLanguageId = FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (initialFileLanguageId === undefined) {
-        console.error(`File type ${fileExtension} does not have an epilog language id: ${filepath}`);
+        console.error(`File type ${fileExtension} does not have a valid epilog language id: ${filepath}`);
         return "";
     }
 

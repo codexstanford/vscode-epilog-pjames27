@@ -21,7 +21,7 @@ function resolveFullFileContent(filepath) {
     // Get the file language id from the file extension for the initial file
     const initialFileLanguageId = language_ids_1.FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (initialFileLanguageId === undefined) {
-        console.error(`File type ${fileExtension} does not have an epilog language id: ${filepath}`);
+        console.error(`File type ${fileExtension} does not have a valid epilog language id: ${filepath}`);
         return "";
     }
     // Keep a queue of files to resolve, starting with the initial file

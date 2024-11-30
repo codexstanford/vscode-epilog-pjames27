@@ -7,10 +7,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const path = require("path");
 const vscode = require("vscode");
+const epilog_js = require("../../common/out/plain-js/epilog.js");
 const vscode_1 = require("vscode");
 const node_1 = require("vscode-languageclient/node");
 const epilog_runScript_1 = require("./commands/epilog_runScript");
-const epilog_gather_1 = require("./commands/epilog_gather");
+const epilog_compile_1 = require("./commands/epilog_compile");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
 let client;
 function activate(context) {
@@ -51,10 +52,11 @@ function activate(context) {
     // Create the language client and start the client.
     client = new node_1.LanguageClient('epilogLanguageServer', 'Epilog Language Server', serverOptions, clientOptions);
     let disposable = vscode.commands.registerCommand('epilog.runScript', () => {
+        epilog_js.setTraceOutputFunc(client.outputChannel.appendLine);
         (0, epilog_runScript_1.epilogCmd_runScript)(client);
     });
-    let disposable2 = vscode.commands.registerCommand('epilog.gather', () => {
-        (0, epilog_gather_1.epilogCmd_gather)(client);
+    let disposable2 = vscode.commands.registerCommand('epilog.compile', () => {
+        (0, epilog_compile_1.epilogCmd_compile)(client);
     });
     context.subscriptions.push(disposable);
     context.subscriptions.push(disposable2);

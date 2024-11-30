@@ -56,7 +56,7 @@ connection.onInitialized(() => {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings = { maxNumberOfProblems: 1000 };
+const defaultSettings = { runScriptTrace: false };
 let globalSettings = defaultSettings;
 // Cache the settings of all open documents
 const documentSettings = new Map();
@@ -66,7 +66,7 @@ connection.onDidChangeConfiguration(change => {
         documentSettings.clear();
     }
     else {
-        globalSettings = ((change.settings.languageServerExample || defaultSettings));
+        globalSettings = ((change.settings.epilog || defaultSettings));
     }
     // Revalidate all open text documents
     documents.all().forEach(validateTextDocument);

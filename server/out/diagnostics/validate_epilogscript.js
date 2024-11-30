@@ -9,10 +9,11 @@ const language_ids_js_1 = require("../../../common/out/language_ids.js");
 const epilog_js = require("../../../common/out/plain-js/epilog.js");
 // Parses the .epilogscript file and returns a list of diagnostics
 // Generates the following diagnostics:
-// - Errors if there are not three lines
+// - Errors if there are not three or four lines
 // - Errors if there is no line specifying the dataset filepath
 // - Errors if there is no line specifying the ruleset filepath
 // - Errors if there is no line specifying the query
+// - Errors if the doTrace line is not a boolean
 // - Errors if there are multiple lines specifying any of the above
 // - Errors if the dataset filepath does not point to an existing file or folder
 // - Errors if the ruleset filepath does not point to an existing file
@@ -23,23 +24,24 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
     let diagnostics = [];
     // Break the document into lines, filtering out empty lines
     const allLines = docText.split('\n');
-    // Only three lines should remain
-    if (allLines.filter(line => line.trim() !== '').length !== 3) {
+    // Only three or four lines should remain
+    const numLines = allLines.filter(line => line.trim() !== '').length;
+    if (numLines !== 3 && numLines !== 4) {
         diagnostics.push({
             severity: vscode_languageserver_1.DiagnosticSeverity.Error,
             range: {
                 start: textDocument.positionAt(0),
                 end: textDocument.positionAt(docText.length - 1)
             },
-            message: 'Should have precisely three lines: one specifying the ruleset filepath, one specifying the dataset filepath, and one specifying the query.',
+            message: 'Should have precisely three or four lines: one specifying the ruleset filepath, one specifying the dataset filepath, one specifying the query, and optionally one specifying whether to print a trace of the query execution.',
             source: 'epilog'
         });
-        return diagnostics;
     }
     // Gather all the indices of lines specifying each of a ruleset filepath, dataset filepath, and query
     let datasetLineIndices = [];
     let rulesetLineIndices = [];
     let queryLineIndices = [];
+    let doTraceLineIndices = [];
     for (let i = 0; i < allLines.length; i++) {
         const line = allLines[i];
         if (line.startsWith('dataset:')) {
@@ -54,6 +56,10 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
             queryLineIndices.push(i);
             continue;
         }
+        if (line.startsWith('dotrace:')) {
+            doTraceLineIndices.push(i);
+            continue;
+        }
         // Error if there is a line that begins with none of these prefixes 
         diagnostics.push({
             severity: vscode_languageserver_1.DiagnosticSeverity.Error,
@@ -61,7 +67,7 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
                 start: { line: i, character: 0 },
                 end: { line: i, character: Number.MAX_VALUE }
             },
-            message: 'Line must start with \'dataset:\', \'ruleset:\', or \'query:\'',
+            message: 'Line must start with \'dataset:\', \'ruleset:\', \'query:\', or \'dotrace:\'',
             source: 'epilog'
         });
     }
@@ -104,6 +110,53 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
                 source: 'epilog'
             });
         }
+    }
+    if (doTraceLineIndices.length > 1) {
+        for (const index of doTraceLineIndices) {
+            diagnostics.push({
+                severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+                range: {
+                    start: { line: index, character: 0 },
+                    end: { line: index, character: Number.MAX_VALUE }
+                },
+                message: 'Should only specify doTrace option once',
+                source: 'epilog'
+            });
+        }
+    }
+    // Check that there is at least one line specifying each of a ruleset filepath, dataset filepath, and query
+    if (datasetLineIndices.length === 0) {
+        diagnostics.push({
+            severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+            range: {
+                start: textDocument.positionAt(0),
+                end: textDocument.positionAt(docText.length - 1)
+            },
+            message: 'Must specify a dataset filepath',
+            source: 'epilog'
+        });
+    }
+    if (rulesetLineIndices.length === 0) {
+        diagnostics.push({
+            severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+            range: {
+                start: textDocument.positionAt(0),
+                end: textDocument.positionAt(docText.length - 1)
+            },
+            message: 'Must specify a ruleset filepath',
+            source: 'epilog'
+        });
+    }
+    if (queryLineIndices.length === 0) {
+        diagnostics.push({
+            severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+            range: {
+                start: textDocument.positionAt(0),
+                end: textDocument.positionAt(docText.length - 1)
+            },
+            message: 'Must specify a query',
+            source: 'epilog'
+        });
     }
     // Get the absolute paths to the files
     const documentDir = path.dirname(vscode_uri_1.URI.parse(textDocument.uri).fsPath);
@@ -211,6 +264,21 @@ function validateDocWithFiletype_EpilogScript(textDocument, docText) {
                     end: { line: queryLineIndex, character: Number.MAX_VALUE }
                 },
                 message: 'Not a valid Epilog query',
+                source: 'epilog'
+            });
+        }
+    }
+    // Check that the doTrace line is a boolean
+    for (const doTraceLineIndex of doTraceLineIndices) {
+        const doTraceValue = allLines[doTraceLineIndex].split(':')[1].trim().toLowerCase();
+        if (doTraceValue !== 'true' && doTraceValue !== 'false') {
+            diagnostics.push({
+                severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+                range: {
+                    start: { line: doTraceLineIndex, character: 'dotrace:'.length },
+                    end: { line: doTraceLineIndex, character: Number.MAX_VALUE }
+                },
+                message: 'dotrace must be either true or false',
                 source: 'epilog'
             });
         }

@@ -19,8 +19,8 @@ A Language Server extension which provides language support for Epilog, the logi
 - A .epilogscript file should contain the three lines below, in any order. The query can be executed on the specified ruleset and dataset(s) by running the "Epilog: Run Script" command from the .epilogscript file. The results will be printed to the "Epilog Language Server" output channel.
     - dataset: <filepath> (to a single file or to a folder containing one or more .hdf files)
     - ruleset: <filepath> (to a single file)
-    - query: <query>
-    
+    - query: <epilog query>
+    - dotrace: <true/false> (optional, defaults to false)
 ### Running queries
 - See the information on the .epilogscript file type above.
 
@@ -35,6 +35,15 @@ No extension settings are currently contributed/implemented.
 - Metadata validation is not yet implemented.
 
 ## Release Notes
+
+### 0.1.1
+- Changed name of "Epilog: Gather" command to "Epilog: Compile"
+- Improved "Epilog: Run Script" command.
+    - Added optional fourth line 'dotrace: <boolean>' to .epilogscript files to specify whether to print the trace to the output channel.
+    - Improved output formatting.
+        - Removed final newline from query results.
+        - Now also prints the query in the output channel, in addition to the results.
+        - Lengthened divider line when folder results are printed.
 
 ### 0.1.0
 - Added functionality to run Epilog queries.

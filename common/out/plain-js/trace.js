@@ -24,7 +24,6 @@
 //==============================================================================
 // Sentential Representation
 //==============================================================================
-const { debug } = require("console");
 function symbolp(x) { return typeof x === 'string'; }
 function varp(x) {
     return (typeof (x) === 'string' && x.length !== 0 &&
@@ -4596,7 +4595,7 @@ function tempfinds(result, query, temprules, facts, rules) {
 //------------------------------------------------------------------------------
 var traces = true;
 var traceoutputchannelfunction = console.log;
-function setTraceOutputFunc(func) {
+function setTraceOutputChannel(func) {
     traceoutputchannelfunction = func;
 }
 function trace() {
@@ -4659,28 +4658,28 @@ function tracecall(p, cont) {
         return false;
     }
     ;
-    traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Call: ' + grind(p));
+    console.log("%c%s", "font-family:courier", grindspaces(tracedepth(cont)) + 'Call: ' + grind(p));
 }
 function traceexit(p, cont) {
     if (!tracep(operator(p))) {
         return false;
     }
     ;
-    traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Exit: ' + grind(p));
+    console.log("%c%s", "font-family:courier", grindspaces(tracedepth(cont)) + 'Exit: ' + grind(p));
 }
 function traceredo(p, cont) {
     if (!tracep(operator(p))) {
         return false;
     }
     ;
-    traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Redo: ' + grind(p));
+    console.log("%c%s", "font-family:courier", grindspaces(tracedepth(cont)) + 'Redo: ' + grind(p));
 }
 function tracefail(p, cont) {
     if (!tracep(operator(p))) {
         return false;
     }
     ;
-    traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Fail: ' + grind(p));
+    console.log("%c%s", "font-family:courier", grindspaces(tracedepth(cont)) + 'Fail: ' + grind(p));
 }
 function grindspaces(n) {
     if (n === 0) {
@@ -7574,13 +7573,7 @@ function getrelations(datum, rs) {
 // End
 //==============================================================================
 module.exports = {
-    read: read,
-    readdata: readdata,
-    grindem: grindem,
-    compfinds: compfinds,
-    definemorefacts: definemorefacts,
-    definemorerules: definemorerules,
     debugfinds: debugfinds,
-    setTraceOutputFunc: setTraceOutputFunc
+    setTraceOutputChannel: setTraceOutputChannel
 };
-//# sourceMappingURL=epilog.js.map
+//# sourceMappingURL=trace.js.map

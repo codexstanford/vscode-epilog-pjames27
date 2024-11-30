@@ -5,6 +5,7 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import * as epilog_js from '../../common/out/plain-js/epilog.js';
 import { workspace, ExtensionContext } from 'vscode';
 
 import {
@@ -15,7 +16,7 @@ import {
 } from 'vscode-languageclient/node';
 
 import { epilogCmd_runScript } from './commands/epilog_runScript';
-import { epilogCmd_gather } from './commands/epilog_gather';
+import { epilogCmd_compile } from './commands/epilog_compile';
 import { EPILOG_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID } from '../../common/out/language_ids.js';
 
 let client: LanguageClient;
@@ -71,11 +72,12 @@ export function activate(context: ExtensionContext) {
 	);
 	
 	let disposable = vscode.commands.registerCommand('epilog.runScript', () => {
+		epilog_js.setTraceOutputFunc(client.outputChannel.appendLine);
 		epilogCmd_runScript(client);
 	});
 
-	let disposable2 = vscode.commands.registerCommand('epilog.gather', () => {
-		epilogCmd_gather(client);
+	let disposable2 = vscode.commands.registerCommand('epilog.compile', () => {
+		epilogCmd_compile(client);
 	});
 
 	context.subscriptions.push(disposable);

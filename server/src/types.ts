@@ -1,4 +1,4 @@
 // The example settings
-export interface ExampleSettings {
-	maxNumberOfProblems: number;
+export interface EpilogSettings {
+	runScriptTrace: boolean;
 }

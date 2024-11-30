@@ -97,35 +97,24 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "Example configuration",
+      "title": "Running Scripts",
       "properties": {
-        "languageServerExample.maxNumberOfProblems": {
+        "epilog.runScript.trace": {
           "scope": "resource",
-          "type": "number",
-          "default": 100,
-          "description": "Controls the maximum number of problems produced by the server."
-        },
-        "languageServerExample.trace.server": {
-          "scope": "window",
-          "type": "string",
-          "enum": [
-            "off",
-            "messages",
-            "verbose"
-          ],
-          "default": "verbose",
-          "description": "Traces the communication between VS Code and the language server."
+          "type": "boolean",
+          "default": false,
+          "description": "Print trace of query execution."
         }
       }
     },
     "commands": [
       {
         "command": "epilog.runScript",
-        "title": "Run Epilog Script"
+        "title": "Epilog: Run Epilog Script"
       },
       {
-        "command": "epilog.gather",
-        "title": "Gather referenced Epilog files"
+        "command": "epilog.compile",
+        "title": "Epilog: Compile together referenced Epilog files"
       }
     ]
   },

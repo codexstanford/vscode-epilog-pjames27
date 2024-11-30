@@ -25,6 +25,8 @@
 // Sentential Representation
 //==============================================================================
 
+const { debug } = require("console")
+
 function symbolp (x)
  {return typeof x==='string'}
 
@@ -3000,6 +3002,12 @@ function tempfinds (result,query,temprules,facts,rules)
 
 var traces = true;
 
+var traceoutputchannelfunction = console.log;
+
+function setTraceOutputFunc(func) {
+    traceoutputchannelfunction = func;
+}
+
 function trace ()
  {if (arguments.length===0) {traces = true; return true};
   if (typeof(traces)!=='object') {traces = []};
@@ -3026,23 +3034,19 @@ function tracedepth (cont)
 
 function tracecall (p,cont)
  {if (!tracep(operator(p))) {return false};
-  console.log("%c%s","font-family:courier",
-              grindspaces(tracedepth(cont)) + 'Call: ' + grind(p))}
+  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Call: ' + grind(p))}
 
 function traceexit (p,cont)
  {if (!tracep(operator(p))) {return false};
-  console.log("%c%s","font-family:courier",
-              grindspaces(tracedepth(cont)) + 'Exit: ' + grind(p));}
+  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Exit: ' + grind(p));}
 
 function traceredo (p,cont)
  {if (!tracep(operator(p))) {return false};
-  console.log("%c%s","font-family:courier",
-              grindspaces(tracedepth(cont)) + 'Redo: ' + grind(p))}
+  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Redo: ' + grind(p))}
 
 function tracefail (p,cont)
  {if (!tracep(operator(p))) {return false};
-  console.log("%c%s","font-family:courier",
-              grindspaces(tracedepth(cont)) + 'Fail: ' + grind(p))}
+  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Fail: ' + grind(p))}
 
 function grindspaces (n)
  {if (n===0) {return ''};
@@ -4887,6 +4891,8 @@ module.exports = {
     grindem: grindem,
     compfinds: compfinds,
     definemorefacts: definemorefacts,
-    definemorerules: definemorerules
-    
+    definemorerules: definemorerules,
+
+    debugfinds: debugfinds,
+    setTraceOutputFunc: setTraceOutputFunc
 }
