@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseFrontmatter = exports.frontmatterToMap = exports.getFrontmatter = exports.hasFrontmatter = void 0;
+exports.getAbsFilepathsLinkedFromFrontmatterFields = exports.parseFrontmatter = exports.frontmatterToMap = exports.getFrontmatter = exports.hasFrontmatter = void 0;
+const fs = require("fs");
+const path = require("path");
 const yamlFrontmatterRegex = /^---\s*\n(?:(?!---)[^\n]*\n)*---/;
 function hasFrontmatter(text) {
     return yamlFrontmatterRegex.test(text);
@@ -73,4 +75,48 @@ function parseFrontmatter(frontmatter) {
     return fieldsToVals;
 }
 exports.parseFrontmatter = parseFrontmatter;
+// Returns a set of the absolute filepaths linked from the "frontmatterFieldsToTraverse" frontmatter fields of the initial file
+// Doesn't include the initial file in the returned set
+// If recursive == true, then the function will recursively traverse the filepaths linked from the frontmatter fields of the linked files
+function getAbsFilepathsLinkedFromFrontmatterFields(initialAbsFilePath, frontmatterFieldsToTraverse, recursive = false) {
+    console.log(`Getting absolute filepaths linked from frontmatter fields ${frontmatterFieldsToTraverse} of ${initialAbsFilePath}`);
+    let visitedAbsFilepaths = new Set();
+    let absFilepathsToVisit = [initialAbsFilePath];
+    let absFilepathsLinked = new Set();
+    while (absFilepathsToVisit.length > 0) {
+        const currAbsFilepath = absFilepathsToVisit.shift();
+        const currFileDir = path.dirname(currAbsFilepath); // Need this to correctly resolve the relative filepaths in the frontmatter
+        // Verify the file exists
+        if (!fs.existsSync(currAbsFilepath)) {
+            console.error(`File does not exist: ${currAbsFilepath}`);
+            continue;
+        }
+        // If the file has already been visited, skip it. This means there's a cycle.
+        if (visitedAbsFilepaths.has(currAbsFilepath)) {
+            console.warn(`Cycle detected at ${currAbsFilepath} when resolving file contents for ${initialAbsFilePath}`);
+            continue;
+        }
+        visitedAbsFilepaths.add(currAbsFilepath);
+        // Get the frontmatter fields and their values
+        const fileText = fs.readFileSync(currAbsFilepath, 'utf8');
+        const frontmatterFieldsToVals = parseFrontmatter(getFrontmatter(fileText));
+        // Get the relative filepaths from the specified frontmatter fields
+        for (const field of frontmatterFieldsToTraverse) {
+            const fieldValues = frontmatterFieldsToVals.get(field);
+            if (fieldValues === undefined) {
+                continue;
+            }
+            // Add the absolute filepaths to the linked filepaths, and if recursive == true, add the filepaths to the set of filepaths to visit
+            for (const relFilepath of fieldValues) {
+                const absFilepath = path.join(currFileDir, relFilepath);
+                absFilepathsLinked.add(absFilepath);
+                if (recursive) {
+                    absFilepathsToVisit.push(absFilepath);
+                }
+            }
+        }
+    }
+    return absFilepathsLinked;
+}
+exports.getAbsFilepathsLinkedFromFrontmatterFields = getAbsFilepathsLinkedFromFrontmatterFields;
 //# sourceMappingURL=frontmatter.js.map

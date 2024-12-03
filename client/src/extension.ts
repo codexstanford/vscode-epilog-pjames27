@@ -16,7 +16,7 @@ import {
 } from 'vscode-languageclient/node';
 
 import { epilogCmd_runScript } from './commands/epilog_runScript';
-import { epilogCmd_compile } from './commands/epilog_compile';
+import { epilogCmd_consolidate } from './commands/epilog_consolidate';
 import { EPILOG_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID } from '../../common/out/language_ids.js';
 
 let client: LanguageClient;
@@ -76,8 +76,8 @@ export function activate(context: ExtensionContext) {
 		epilogCmd_runScript(client);
 	});
 
-	let disposable2 = vscode.commands.registerCommand('epilog.compile', () => {
-		epilogCmd_compile(client);
+	let disposable2 = vscode.commands.registerCommand('epilog.consolidate', () => {
+		epilogCmd_consolidate(client);
 	});
 
 	context.subscriptions.push(disposable);

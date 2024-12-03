@@ -11,7 +11,7 @@ const epilog_js = require("../../common/out/plain-js/epilog.js");
 const vscode_1 = require("vscode");
 const node_1 = require("vscode-languageclient/node");
 const epilog_runScript_1 = require("./commands/epilog_runScript");
-const epilog_compile_1 = require("./commands/epilog_compile");
+const epilog_consolidate_1 = require("./commands/epilog_consolidate");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
 let client;
 function activate(context) {
@@ -55,8 +55,8 @@ function activate(context) {
         epilog_js.setTraceOutputFunc(client.outputChannel.appendLine);
         (0, epilog_runScript_1.epilogCmd_runScript)(client);
     });
-    let disposable2 = vscode.commands.registerCommand('epilog.compile', () => {
-        (0, epilog_compile_1.epilogCmd_compile)(client);
+    let disposable2 = vscode.commands.registerCommand('epilog.consolidate', () => {
+        (0, epilog_consolidate_1.epilogCmd_consolidate)(client);
     });
     context.subscriptions.push(disposable);
     context.subscriptions.push(disposable2);

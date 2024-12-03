@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import {
     getFrontmatter,
-    parseFrontmatter
+    getAbsFilepathsLinkedFromFrontmatterFields
 } from './frontmatter';
 
 import {
@@ -15,81 +15,62 @@ import {
 
 
 
-// Functions to resolve the full content of a ruleset, dataset, or metadata file, as determined by the files it links to in its frontmatter
+// Resolves the full content of a ruleset, dataset, or metadata file, as determined by the files it links to in its frontmatter
 // Note: Validates that the referenced files exist, but doesn't check their extensions. Leaves that to the Language Server's getDiagnostics.
-// Note 2: Assumes the frontmatter is well-formed.
-// NOT FULLY IMPLEMENTED
-    // Currently does not get the content of the files that the dataset and ruleset inherit from. Only get the content of the file after the frontmatter.
-export function resolveFullFileContent(filepath: string): string {
+export function resolveFullFileContent(absFilePath: string): string {
     // Verify the file exists
-    if (!fs.existsSync(filepath)) {
-        console.error(`File does not exist: ${filepath}`);
+    if (!fs.existsSync(absFilePath)) {
+        console.error(`File does not exist: ${absFilePath}`);
         return "";
     }
 
     // Get the file extension
-    const fileExtension = path.extname(filepath);
+    const fileExtension = path.extname(absFilePath);
 
     // Get the file language id from the file extension for the initial file
     const initialFileLanguageId = FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (initialFileLanguageId === undefined) {
-        console.error(`File type ${fileExtension} does not have a valid epilog language id: ${filepath}`);
+        console.error(`File type ${fileExtension} does not have a valid epilog language id: ${absFilePath}`);
         return "";
     }
 
-    // Keep a queue of files to resolve, starting with the initial file
-    let visitedFiles: string[] = [];
 
-    let filesToResolve: string[] = [filepath];
+    let frontmatterFieldToTraverse: string = "";
+    switch (initialFileLanguageId) {
+        case EPILOG_DATASET_LANGUAGE_ID:
+            frontmatterFieldToTraverse = 'data';
+            break;
+        case EPILOG_RULESET_LANGUAGE_ID :
+            frontmatterFieldToTraverse = 'rules';
+            break;
+        case EPILOG_METADATA_LANGUAGE_ID :
+            frontmatterFieldToTraverse = 'metadata';
+            break;
+        default:
+            console.error(`Can't resolve full file content for files with type ${initialFileLanguageId}: ${absFilePath}`);
+            return "";
+    }
+
+    // Get the set of absolute filepaths to visit, starting with the initial file and including all the files it links to, recursively
+    let linkedAbsFilepaths = getAbsFilepathsLinkedFromFrontmatterFields(absFilePath, [frontmatterFieldToTraverse], true);
+    // The initial file will only be in the linkedAbsFilepaths set if there's a cycle. We remove it to avoid adding its content twice.
+    // And we remove it here then construct the array, instead of adding the initial file to the set then constructing the array, to ensure the initial file's content is first in the output
+    linkedAbsFilepaths.delete(absFilePath); 
+    let absFilepathsToVisit: string[] = [absFilePath, ...Array.from(linkedAbsFilepaths)];
 
     let fullFileContent = "";
 
-    while (filesToResolve.length > 0) {
-        const currFilepath = filesToResolve.shift();
-        const currFileDir = path.dirname(currFilepath); // Need this to correctly resolve the relative filepaths in the frontmatter
-
+    for (const currAbsFilepath of absFilepathsToVisit) {
         // Verify the file exists
-        if (!fs.existsSync(currFilepath)) {
-            console.error(`File does not exist: ${currFilepath}`);
+        if (!fs.existsSync(currAbsFilepath)) {
+            console.error(`File does not exist: ${currAbsFilepath}`);
             continue;
         }
 
-        // If the file has already been visited, skip it. This means there's a cycle.
-        if (visitedFiles.includes(currFilepath)) {
-            console.warn(`Cycle detected at ${currFilepath} when resolving file contents for ${filepath}`);
-            continue;
-        }
-
-        // Add the file to the visited files
-        visitedFiles.push(currFilepath);
-
-        // Get the file content
-        const docText = fs.readFileSync(currFilepath, 'utf8');
-        const postFrontmatterText = resolveGetPostFrontmatterFileContent(docText).trim();
+        // Get the file content and add to the full file content
+        const fileText = fs.readFileSync(currAbsFilepath, 'utf8');
+        const postFrontmatterText = resolveGetPostFrontmatterFileContent(fileText).trim();
         fullFileContent += postFrontmatterText + "\n";
-        
-        // Parse the frontmatter
-        const frontmatterFieldsToVals = parseFrontmatter(getFrontmatter(docText));
-
-        // Based on the language id, get the files to resolve from the frontmatter
-        let additionalRelFilepathsToResolve: string[] = [];
-        switch (initialFileLanguageId) {
-            case EPILOG_DATASET_LANGUAGE_ID:
-                additionalRelFilepathsToResolve = frontmatterFieldsToVals.get('data') ?? [];
-                break;
-            case EPILOG_RULESET_LANGUAGE_ID :
-                additionalRelFilepathsToResolve = frontmatterFieldsToVals.get('rules') ?? [];
-                break;
-            case EPILOG_METADATA_LANGUAGE_ID :
-                additionalRelFilepathsToResolve = frontmatterFieldsToVals.get('metadata') ?? [];
-                break;
-            default:
-                console.error(`Can't resolve full file content for files with type ${initialFileLanguageId}: ${filepath}`);
-                return "";
-        }
-
-        // Add the current file's directory to the front of the filepaths to make them absolute
-        filesToResolve.push(...(additionalRelFilepathsToResolve.map(relFilepath => path.join(currFileDir, relFilepath))));
     }
 
     return fullFileContent;

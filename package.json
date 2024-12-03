@@ -113,8 +113,8 @@
         "title": "Epilog: Run Epilog Script"
       },
       {
-        "command": "epilog.compile",
-        "title": "Epilog: Compile together referenced Epilog files"
+        "command": "epilog.consolidate",
+        "title": "Epilog: Consolidate contents of referenced Epilog files"
       }
     ]
   },

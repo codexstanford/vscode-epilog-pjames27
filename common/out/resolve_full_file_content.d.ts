@@ -1,1 +1,1 @@
-export declare function resolveFullFileContent(filepath: string): string;
+export declare function resolveFullFileContent(absFilePath: string): string;

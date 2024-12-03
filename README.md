@@ -24,7 +24,27 @@ A Language Server extension which provides language support for Epilog, the logi
 ### Running queries
 - See the information on the .epilogscript file type above.
 
-### YAML Frontmatter (TODO)
+### YAML Frontmatter
+- For .hdf, .hrf, and .metadata files, other files of the same type can be specified in the YAML frontmatter using relative filepaths. 
+    - When the "Run Script" or "Consolidate" commands are run, the post-YAML frontmatter contents of the specified files are considered. 
+        - E.g. when "Run Script" is run on a .hrf file, the Epilog ruleset is constructed from the contents of the specified .hrf file, from the post-YAML frontmatter contents of the files directly referenced in the .hrf file's frontmatter, and so on recursively from the files referenced in *those* files' frontmatter.
+    - The YAML frontmatter field whose values are considered is different for each file type:
+        - For .hdf files, the field is "dataset".
+        - For .hrf files, the field is "ruleset".
+        - For .metadata files, the field is "metadata".
+    - The structure of the YAML frontmatter is as follows:
+        - The first and last lines are "---".
+        - A field is a whitespace-free string ending with a colon, followed by any whitespace and then a value.
+        - A value is any string starting with a tab or four spaces, followed by a dash and a space, and then any string.
+        - e.g.
+            ```
+            ---
+            dataset:
+                - <filepath>
+                - ...
+                - <filepath>
+            ---
+            ```
 
 ## Extension Settings
 
@@ -37,7 +57,7 @@ No extension settings are currently contributed/implemented.
 ## Release Notes
 
 ### 0.1.1
-- Changed name of "Epilog: Gather" command to "Epilog: Compile"
+- Changed name of "Epilog: Gather" command to "Epilog: Consolidate"
 - Improved "Epilog: Run Script" command.
     - Added optional fourth line 'dotrace: <boolean>' to .epilogscript files to specify whether to print the trace to the output channel.
     - Improved output formatting.

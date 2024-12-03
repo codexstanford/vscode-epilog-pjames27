@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 const yamlFrontmatterRegex = /^---\s*\n(?:(?!---)[^\n]*\n)*---/;
 
 export function hasFrontmatter(text: string): boolean {
@@ -74,4 +77,58 @@ export function parseFrontmatter(frontmatter: string): Map<string, string[]> {
     }
 
     return fieldsToVals;
+}
+
+// Returns a set of the absolute filepaths linked from the "frontmatterFieldsToTraverse" frontmatter fields of the initial file
+// Doesn't include the initial file in the returned set
+// If recursive == true, then the function will recursively traverse the filepaths linked from the frontmatter fields of the linked files
+export function getAbsFilepathsLinkedFromFrontmatterFields(initialAbsFilePath: string, frontmatterFieldsToTraverse: string[], recursive: boolean = false): Set<string> {
+    
+    console.log(`Getting absolute filepaths linked from frontmatter fields ${frontmatterFieldsToTraverse} of ${initialAbsFilePath}`);
+    
+    let visitedAbsFilepaths: Set<string> = new Set();
+
+    let absFilepathsToVisit: string[] = [initialAbsFilePath];
+    let absFilepathsLinked: Set<string> = new Set();
+    
+    while (absFilepathsToVisit.length > 0) {
+        const currAbsFilepath = absFilepathsToVisit.shift();
+        const currFileDir = path.dirname(currAbsFilepath); // Need this to correctly resolve the relative filepaths in the frontmatter
+        
+        // Verify the file exists
+        if (!fs.existsSync(currAbsFilepath)) {
+            console.error(`File does not exist: ${currAbsFilepath}`);
+            continue;
+        }
+
+        // If the file has already been visited, skip it. This means there's a cycle.
+        if (visitedAbsFilepaths.has(currAbsFilepath)) {
+            console.warn(`Cycle detected at ${currAbsFilepath} when resolving file contents for ${initialAbsFilePath}`);
+            continue;
+        }
+
+        visitedAbsFilepaths.add(currAbsFilepath);
+
+        // Get the frontmatter fields and their values
+        const fileText = fs.readFileSync(currAbsFilepath, 'utf8');
+        const frontmatterFieldsToVals = parseFrontmatter(getFrontmatter(fileText));
+
+        // Get the relative filepaths from the specified frontmatter fields
+        for (const field of frontmatterFieldsToTraverse) {
+            const fieldValues = frontmatterFieldsToVals.get(field);
+            if (fieldValues === undefined) {
+                continue;
+            }
+            // Add the absolute filepaths to the linked filepaths, and if recursive == true, add the filepaths to the set of filepaths to visit
+            for (const relFilepath of fieldValues) {
+                const absFilepath = path.join(currFileDir, relFilepath);
+                absFilepathsLinked.add(absFilepath);
+                if (recursive) {
+                    absFilepathsToVisit.push(absFilepath);
+                }
+            }
+        }
+    }
+
+    return absFilepathsLinked;
 }
