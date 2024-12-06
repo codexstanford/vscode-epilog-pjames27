@@ -24,7 +24,6 @@
 //==============================================================================
 // Sentential Representation
 //==============================================================================
-const { debug } = require("console");
 function symbolp(x) { return typeof x === 'string'; }
 function varp(x) {
     return (typeof (x) === 'string' && x.length !== 0 &&
@@ -2076,7 +2075,7 @@ function baseapplyrs(fun, args, facts, rules) {
     return result;
 }
 //==============================================================================
-// Full inference
+// comp series
 //==============================================================================
 //------------------------------------------------------------------------------
 // compfindp
@@ -2526,7 +2525,6 @@ function compsomeexit(n, x, pl, al, cont, results, facts, rules) {
 }
 //------------------------------------------------------------------------------
 // compgen
-// call
 //------------------------------------------------------------------------------
 function compgen(x, p, facts, rules) {
     var type = gettype(p, rules);
@@ -2536,754 +2534,6 @@ function compgen(x, p, facts, rules) {
     toplevel.aspect = x;
     toplevel.alist = al;
     return makeframe(type, p, al, facts, rules, 'call', toplevel);
-}
-function gettype(p, rules) {
-    if (symbolp(p)) {
-        return 'atom';
-    }
-    ;
-    if (p[0] === 'same') {
-        return 'same';
-    }
-    ;
-    if (p[0] === 'distinct') {
-        return 'distinct';
-    }
-    ;
-    if (specialp(p[0])) {
-        return 'special';
-    }
-    ;
-    if (p[0] === 'evaluate') {
-        return 'evaluation';
-    }
-    ;
-    if (p[0] === 'member') {
-        return 'member';
-    }
-    ;
-    if (p[0] === 'not') {
-        return 'negation';
-    }
-    ;
-    if (p[0] === 'and') {
-        return 'conjunction';
-    }
-    ;
-    if (p[0] === 'or') {
-        return 'disjunction';
-    }
-    ;
-    if (p[0] === 'rule') {
-        return 'rule';
-    }
-    ;
-    if (p[0] === 'true') {
-        return 'true';
-    }
-    ;
-    if (basep(p[0], rules)) {
-        return 'base';
-    }
-    ;
-    return 'view';
-}
-function makeframe(type, p, al, facts, rules, task, caller) {
-    var frame = {};
-    frame.type = type;
-    frame.query = p;
-    frame.alist = al;
-    frame.facts = facts;
-    frame.rules = rules;
-    frame.task = task;
-    frame.caller = caller;
-    return frame;
-}
-//------------------------------------------------------------------------------
-var framelimit = 100000;
-function callx(gen) { return call(gen); }
-function calln(n, gen) {
-    if (typeof (n) === 'number' && n <= 0) {
-        return [];
-    }
-    ;
-    var i = 0;
-    var answer;
-    var results = [];
-    var resultmap = {};
-    while (i < n && (answer = call(gen))) {
-        var ind = grindem(answer);
-        if (!(ind in resultmap)) {
-            results.push(answer);
-            resultmap[ind] = 1;
-            i++;
-        }
-    }
-    return results;
-}
-function calls(gen) {
-    var answer;
-    var results = [];
-    var resultmap = {};
-    while (answer = call(gen)) {
-        var ind = grindem(answer);
-        if (!(ind in resultmap)) {
-            results.push(answer);
-            resultmap[ind] = 1;
-        }
-    }
-    return results;
-}
-function call(frame) {
-    if (frame.caller.task) {
-        frame.task = 'redo';
-    }
-    ;
-    return loop(frame);
-}
-function loop(frame) {
-    while (true) { //console.log(frame.task + ': '); console.log(frame);
-        if (instantiations + inferences >= framelimit) {
-            return false;
-        }
-        ;
-        if (frame.type === 'toplevel') {
-            if (frame.task === 'next') {
-                return pluug(frame.aspect, frame.alist, frame.alist);
-            }
-            ;
-            if (frame.task === 'back') {
-                return false;
-            }
-            ;
-            return false;
-        }
-        ;
-        frame = processframe(frame);
-    }
-}
-function processframe(frame) {
-    var task = frame.task;
-    if (task === 'call') {
-        return callframe(frame);
-    }
-    ;
-    if (task === 'redo') {
-        return redoframe(frame);
-    }
-    ;
-    if (task === 'next') {
-        return nextframe(frame);
-    }
-    ;
-    if (task === 'back') {
-        return backframe(frame);
-    }
-    ;
-    return false;
-}
-function callframe(frame) {
-    if (frame.type === 'atom') {
-        return callatom(frame);
-    }
-    ;
-    if (frame.type === 'same') {
-        return callsame(frame);
-    }
-    ;
-    if (frame.type === 'distinct') {
-        return calldistinct(frame);
-    }
-    ;
-    if (frame.type === 'special') {
-        return calleval(frame);
-    }
-    ;
-    if (frame.type === 'evaluation') {
-        return callevaluation(frame);
-    }
-    ;
-    if (frame.type === 'member') {
-        return callmember(frame);
-    }
-    ;
-    if (frame.type === 'negation') {
-        return callnegation(frame);
-    }
-    ;
-    if (frame.type === 'conjunction') {
-        return callconjunction(frame);
-    }
-    ;
-    if (frame.type === 'disjunction') {
-        return calldisjunction(frame);
-    }
-    ;
-    if (frame.type === 'true') {
-        return calltrue(frame);
-    }
-    ;
-    if (frame.type === 'base') {
-        return callbase(frame);
-    }
-    ;
-    if (frame.type === 'view') {
-        return callview(frame);
-    }
-    ;
-    if (frame.type === 'rule') {
-        return callrule(frame);
-    }
-    ;
-    return false;
-}
-function redoframe(frame) {
-    if (frame.type === 'atom') {
-        return redoatom(frame);
-    }
-    ;
-    if (frame.type === 'same') {
-        return redosame(frame);
-    }
-    ;
-    if (frame.type === 'distinct') {
-        return redodistinct(frame);
-    }
-    ;
-    if (frame.type === 'special') {
-        return redoeval(frame);
-    }
-    ;
-    if (frame.type === 'evaluation') {
-        return redoevaluation(frame);
-    }
-    ;
-    if (frame.type === 'member') {
-        return redomember(frame);
-    }
-    ;
-    if (frame.type === 'negation') {
-        return redonegation(frame);
-    }
-    ;
-    if (frame.type === 'conjunction') {
-        return redoconjunction(frame);
-    }
-    ;
-    if (frame.type === 'disjunction') {
-        return redodisjunction(frame);
-    }
-    ;
-    if (frame.type === 'true') {
-        return redotrue(frame);
-    }
-    ;
-    if (frame.type === 'base') {
-        return redobase(frame);
-    }
-    ;
-    if (frame.type === 'view') {
-        return redoview(frame);
-    }
-    ;
-    if (frame.type === 'rule') {
-        return redorule(frame);
-    }
-    ;
-    return false;
-}
-function nextframe(frame) {
-    if (frame.type === 'atom') {
-        return nextatom(frame);
-    }
-    ;
-    if (frame.type === 'negation') {
-        return nextnegation(frame);
-    }
-    ;
-    if (frame.type === 'conjunction') {
-        return nextconjunction(frame);
-    }
-    ;
-    if (frame.type === 'disjunction') {
-        return nextdisjunction(frame);
-    }
-    ;
-    if (frame.type === 'view') {
-        return nextview(frame);
-    }
-    ;
-    if (frame.type === 'rule') {
-        return nextrule(frame);
-    }
-    ;
-    return false;
-}
-function backframe(frame) {
-    if (frame.type === 'atom') {
-        return backatom(frame);
-    }
-    ;
-    if (frame.type === 'negation') {
-        return backnegation(frame);
-    }
-    ;
-    if (frame.type === 'conjunction') {
-        return backconjunction(frame);
-    }
-    ;
-    if (frame.type === 'disjunction') {
-        return backdisjunction(frame);
-    }
-    ;
-    if (frame.type === 'view') {
-        return backview(frame);
-    }
-    ;
-    if (frame.type === 'rule') {
-        return backrule(frame);
-    }
-    ;
-    return false;
-}
-//------------------------------------------------------------------------------
-function callatom(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    if (query === 'true') {
-        frame.caller.task = 'next';
-        return frame.caller;
-    }
-    ;
-    if (query === 'false') {
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    if (basep(query, rules)) {
-        return makeframe('base', query, alist, facts, rules, 'call', frame);
-    }
-    ;
-    return makeframe('view', query, alist, facts, rules, 'call', frame);
-}
-function redoatom(frame) {
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-function nextatom(frame) {
-    frame.caller.task = 'next';
-    return frame.caller;
-}
-function backatom(frame) {
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callsame(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var ol = [];
-    frame.ol = ol;
-    if (vnifyp(query[1], alist, query[2], alist, ol)) {
-        frame.caller.task = 'next';
-        return frame.caller;
-    }
-    ;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-function redosame(frame) {
-    var ol = frame.ol;
-    backup(ol);
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function calldistinct(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var ol = [];
-    if (vnifyp(query[1], alist, query[2], alist, ol)) {
-        backup(ol);
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    frame.caller.task = 'next';
-    return frame.caller;
-}
-function redodistinct(frame) {
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function calleval(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var args = seq();
-    for (var i = 1; i < query.length; i++) {
-        var arg = pluug(query[i], alist, alist);
-        if (varp(arg)) {
-            frame.caller.task = 'back';
-            return frame.caller;
-        }
-        else {
-            args[args.length] = arg;
-        }
-    }
-    ;
-    if (eval(query[0]).apply(null, args)) {
-        frame.caller.task = 'next';
-        return frame.caller;
-    }
-    ;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-function redoeval(frame) {
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callevaluation(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    var val = compvalue(pluug(query[1], alist, alist), facts, rules);
-    var ol = [];
-    frame.ol = ol;
-    if (val && vnifyp(query[2], alist, val, alist, ol)) {
-        frame.caller.task = 'next';
-        return frame.caller;
-    }
-    ;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-function redoevaluation(frame) {
-    var ol = frame.ol;
-    backup(ol);
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callmember(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    frame.list = pluug(query[2], alist, alist);
-    frame.ol = [];
-    return redomember(frame);
-}
-function redomember(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var item = query[1];
-    var list = frame.list;
-    var ol = frame.ol;
-    backup(ol);
-    while (!symbolp(list) && list[0] === 'cons') {
-        if (vnifyp(item, alist, list[1], alist, ol)) {
-            list = list[2];
-            frame.list = list;
-            frame.caller.task = 'next';
-            return frame.caller;
-        }
-        ;
-        list = list[2];
-    }
-    ;
-    frame.list = list;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callnegation(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    var subgoal = query[1];
-    var type = gettype(subgoal, rules);
-    return makeframe(type, query[1], alist, facts, rules, 'call', frame);
-}
-function redonegation(frame) {
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-function nextnegation(frame) {
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-function backnegation(frame) {
-    frame.caller.task = 'next';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callconjunction(frame) {
-    frame.index = 0;
-    frame.generators = [];
-    frame.task = 'next';
-    return nextconjunction(frame);
-}
-function redoconjunction(frame) {
-    var query = frame.query;
-    var index = frame.index;
-    if (frame.generators) {
-        frame.generators[index].task = 'redo';
-        return frame.generators[index];
-    }
-    ;
-    return backconjunction(frame);
-}
-function nextconjunction(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    var index = frame.index;
-    if (index === query.length - 1) {
-        frame.caller.task = 'next';
-        return frame.caller;
-    }
-    ;
-    index++;
-    frame.index = index;
-    var subgoal = query[index];
-    var type = gettype(subgoal, rules);
-    var subframe = makeframe(type, subgoal, alist, facts, rules, 'call', frame);
-    frame.generators[index] = subframe;
-    return subframe;
-}
-function backconjunction(frame) {
-    var index = frame.index;
-    if (index === 1) {
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    index--;
-    frame.index = index;
-    frame.generators[index].task = 'redo';
-    return frame.generators[index];
-}
-//------------------------------------------------------------------------------
-function calldisjunction(frame) {
-    var query = frame.query;
-    if (query.length === 1) {
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    frame.index = 0;
-    return backdisjunction(frame);
-}
-function redodisjunction(frame) {
-    var query = frame.query;
-    var index = frame.index;
-    if (query.length === 1) {
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    var subframe = frame.generator;
-    subframe.task = 'redo';
-    return subframe;
-}
-function nextdisjunction(frame) {
-    frame.caller.task = 'next';
-    return frame.caller;
-}
-function backdisjunction(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    var index = frame.index;
-    index++;
-    frame.index = index;
-    if (index >= query.length) {
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    var subgoal = query[index];
-    var type = gettype(subgoal, rules);
-    var subframe = makeframe(type, subgoal, alist, facts, rules, 'call', frame);
-    frame.generator = subframe;
-    return subframe;
-}
-//------------------------------------------------------------------------------
-function callbase(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    frame.data = envlookupfacts(query, alist, facts);
-    frame.index = 0;
-    frame.ol = [];
-    return redobase(frame);
-}
-function redobase(frame) {
-    var p = frame.query;
-    var al = frame.alist;
-    var data = frame.data;
-    var index = frame.index;
-    var ol = frame.ol;
-    backup(ol);
-    while (index < data.length) {
-        instantiations++;
-        if (vnifyp(p, al, data[index], al, ol)) {
-            index++;
-            frame.index = index;
-            frame.caller.task = 'next';
-            return frame.caller;
-        }
-        ;
-        index++;
-    }
-    ;
-    frame.index = index;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function calltrue(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var ds = getdataset(query[2]);
-    var data = envlookupfacts(query[1], alist, ds);
-    frame.data = data;
-    frame.index = 0;
-    frame.ol = [];
-    return redotrue(frame);
-}
-function redotrue(frame) {
-    var query = frame.query;
-    var alist = frame.alist;
-    var data = frame.data;
-    var index = frame.index;
-    var ol = frame.ol;
-    backup(ol);
-    while (index < data.length) {
-        instantiations++;
-        if (vnifyp(query[1], alist, data[index], alist, ol)) {
-            index++;
-            frame.index = index;
-            frame.caller.task = 'next';
-            return frame.caller;
-        }
-        ;
-        index++;
-    }
-    ;
-    frame.index = index;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callview(frame) {
-    frame.data = lookuprules(frame.query, frame.rules);
-    frame.index = 0;
-    frame.blist = {};
-    frame.ol = [];
-    frame.task = 'redo';
-    return backview(frame);
-}
-function redoview(frame) {
-    var subframe = frame.generator;
-    if (subframe) {
-        subframe.task = 'redo';
-        return subframe;
-    }
-    ;
-    return backview(frame);
-}
-function nextview(frame) {
-    frame.caller.task = 'next';
-    return frame.caller;
-}
-function backview(frame) {
-    var p = frame.query;
-    var al = frame.alist;
-    var bl = frame.blist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    var data = frame.data;
-    var index = frame.index;
-    var ol = frame.ol;
-    backup(ol);
-    while (index < data.length) {
-        inferences++;
-        var datum = data[index];
-        index++;
-        if (datum[0] === 'rule') {
-            if (vnifyp(datum[1], bl, p, al, ol)) {
-                frame.index = index;
-                var subframe = makeframe('rule', datum, bl, facts, rules, 'call', frame);
-                frame.generator = subframe;
-                return subframe;
-            }
-        }
-        else if (vnifyp(p, al, datum, bl, ol)) {
-            frame.index = index;
-            frame.caller.task = 'next';
-            return frame.caller;
-        }
-    }
-    ;
-    frame.index = index;
-    frame.caller.task = 'back';
-    return frame.caller;
-}
-//------------------------------------------------------------------------------
-function callrule(frame) {
-    frame.index = 1;
-    frame.generators = [];
-    frame.task = 'next';
-    return nextrule(frame);
-}
-function redorule(frame) {
-    var query = frame.query;
-    var index = frame.index;
-    if (frame.generators) {
-        frame.generators[index].task = 'redo';
-        return frame.generators[index];
-    }
-    ;
-    return backrule(frame);
-}
-function nextrule(frame) {
-    var rule = frame.query;
-    var alist = frame.alist;
-    var facts = frame.facts;
-    var rules = frame.rules;
-    var index = frame.index;
-    if (index === rule.length - 1) {
-        frame.caller.task = 'next';
-        return frame.caller;
-    }
-    ;
-    index++;
-    frame.index = index;
-    var subgoal = rule[index];
-    var type = gettype(subgoal, rules);
-    var subframe = makeframe(type, subgoal, alist, facts, rules, 'call', frame);
-    frame.generators[index] = subframe;
-    return subframe;
-}
-function backrule(frame) {
-    var index = frame.index;
-    if (index === 2) {
-        frame.caller.task = 'back';
-        return frame.caller;
-    }
-    ;
-    index--;
-    frame.index = index;
-    frame.generators[index].task = 'redo';
-    return frame.generators[index];
 }
 //------------------------------------------------------------------------------
 function compvalue(p, facts, rules) {
@@ -3701,6 +2951,919 @@ function comptransform(condition, action, facts, rules) {
     }
     ;
     return true;
+}
+//==============================================================================
+// heap series
+//==============================================================================
+function heapfindp(query, facts, rules) { return (heapfindx('true', query, facts, rules) === 'true'); }
+function heapfindx(result, query, facts, rules) {
+    var answers = heapfindn(1, result, query, facts, rules);
+    if (answers.length > 0) {
+        return answers[0];
+    }
+    ;
+    return false;
+}
+function heapfinds(result, query, facts, rules) { return zniquify(calls(heapgen(result, query, facts, rules))); }
+function heapfindn(n, result, query, facts, rules) { return calln(n, heapgen(result, query, facts, rules)); }
+//==============================================================================
+function heapgen(x, p, facts, rules) {
+    var type = gettype(p, rules);
+    var al = {};
+    var toplevel = {};
+    toplevel.type = 'toplevel';
+    toplevel.aspect = x;
+    toplevel.alist = al;
+    return makeframe(type, p, al, facts, rules, 'call', toplevel);
+}
+function gettype(p, rules) {
+    if (symbolp(p)) {
+        return 'atom';
+    }
+    ;
+    if (p[0] === 'same') {
+        return 'same';
+    }
+    ;
+    if (p[0] === 'distinct') {
+        return 'distinct';
+    }
+    ;
+    if (specialp(p[0])) {
+        return 'special';
+    }
+    ;
+    if (p[0] === 'evaluate') {
+        return 'evaluation';
+    }
+    ;
+    if (p[0] === 'member') {
+        return 'member';
+    }
+    ;
+    if (p[0] === 'not') {
+        return 'negation';
+    }
+    ;
+    if (p[0] === 'and') {
+        return 'conjunction';
+    }
+    ;
+    if (p[0] === 'or') {
+        return 'disjunction';
+    }
+    ;
+    if (p[0] === 'rule') {
+        return 'rule';
+    }
+    ;
+    if (p[0] === 'true') {
+        return 'true';
+    }
+    ;
+    if (basep(p[0], rules)) {
+        return 'base';
+    }
+    ;
+    return 'view';
+}
+function makeframe(type, p, al, facts, rules, task, caller) {
+    var frame = {};
+    frame.type = type;
+    frame.query = p;
+    frame.alist = al;
+    frame.facts = facts;
+    frame.rules = rules;
+    frame.task = task;
+    frame.caller = caller;
+    return frame;
+}
+//------------------------------------------------------------------------------
+var framelimit = 100000;
+function callx(gen) { return call(gen); }
+function calln(n, gen) {
+    if (typeof (n) === 'number' && n <= 0) {
+        return [];
+    }
+    ;
+    var i = 0;
+    var answer;
+    var results = [];
+    var resultmap = {};
+    while (i < n && (answer = call(gen))) {
+        var ind = grindem(answer);
+        if (!(ind in resultmap)) {
+            results.push(answer);
+            resultmap[ind] = 1;
+            i++;
+        }
+    }
+    return results;
+}
+function calls(gen) {
+    var answer;
+    var results = [];
+    var resultmap = {};
+    while (answer = call(gen)) {
+        var ind = grindem(answer);
+        if (!(ind in resultmap)) {
+            results.push(answer);
+            resultmap[ind] = 1;
+        }
+    }
+    return results;
+}
+function call(frame) {
+    if (frame.caller.task) {
+        frame.task = 'redo';
+    }
+    ;
+    return loop(frame);
+}
+function loop(frame) {
+    while (true) { //console.log(frame.task + ': '); console.log(frame);
+        if (instantiations + inferences >= framelimit) {
+            return false;
+        }
+        ;
+        if (frame.type === 'toplevel') {
+            if (frame.task === 'next') {
+                return pluug(frame.aspect, frame.alist, frame.alist);
+            }
+            ;
+            if (frame.task === 'back') {
+                return false;
+            }
+            ;
+            return false;
+        }
+        ;
+        frame = processframe(frame);
+    }
+}
+//------------------------------------------------------------------------------
+function processframe(frame) {
+    var task = frame.task;
+    if (task === 'call') {
+        return callframe(frame);
+    }
+    ;
+    if (task === 'redo') {
+        return redoframe(frame);
+    }
+    ;
+    if (task === 'next') {
+        return nextframe(frame);
+    }
+    ;
+    if (task === 'back') {
+        return backframe(frame);
+    }
+    ;
+    return false;
+}
+function callframe(frame) {
+    if (frame.type === 'atom') {
+        return callatom(frame);
+    }
+    ;
+    if (frame.type === 'same') {
+        return callsame(frame);
+    }
+    ;
+    if (frame.type === 'distinct') {
+        return calldistinct(frame);
+    }
+    ;
+    if (frame.type === 'special') {
+        return calleval(frame);
+    }
+    ;
+    if (frame.type === 'evaluation') {
+        return callevaluation(frame);
+    }
+    ;
+    if (frame.type === 'member') {
+        return callmember(frame);
+    }
+    ;
+    if (frame.type === 'negation') {
+        return callnegation(frame);
+    }
+    ;
+    if (frame.type === 'conjunction') {
+        return callconjunction(frame);
+    }
+    ;
+    if (frame.type === 'disjunction') {
+        return calldisjunction(frame);
+    }
+    ;
+    if (frame.type === 'true') {
+        return calltrue(frame);
+    }
+    ;
+    if (frame.type === 'base') {
+        return callbase(frame);
+    }
+    ;
+    if (frame.type === 'view') {
+        return callview(frame);
+    }
+    ;
+    if (frame.type === 'rule') {
+        return callrule(frame);
+    }
+    ;
+    return false;
+}
+function redoframe(frame) {
+    if (frame.type === 'atom') {
+        return redoatom(frame);
+    }
+    ;
+    if (frame.type === 'same') {
+        return redosame(frame);
+    }
+    ;
+    if (frame.type === 'distinct') {
+        return redodistinct(frame);
+    }
+    ;
+    if (frame.type === 'special') {
+        return redoeval(frame);
+    }
+    ;
+    if (frame.type === 'evaluation') {
+        return redoevaluation(frame);
+    }
+    ;
+    if (frame.type === 'member') {
+        return redomember(frame);
+    }
+    ;
+    if (frame.type === 'negation') {
+        return redonegation(frame);
+    }
+    ;
+    if (frame.type === 'conjunction') {
+        return redoconjunction(frame);
+    }
+    ;
+    if (frame.type === 'disjunction') {
+        return redodisjunction(frame);
+    }
+    ;
+    if (frame.type === 'true') {
+        return redotrue(frame);
+    }
+    ;
+    if (frame.type === 'base') {
+        return redobase(frame);
+    }
+    ;
+    if (frame.type === 'view') {
+        return redoview(frame);
+    }
+    ;
+    if (frame.type === 'rule') {
+        return redorule(frame);
+    }
+    ;
+    return false;
+}
+function nextframe(frame) {
+    if (frame.type === 'atom') {
+        return nextatom(frame);
+    }
+    ;
+    if (frame.type === 'negation') {
+        return nextnegation(frame);
+    }
+    ;
+    if (frame.type === 'conjunction') {
+        return nextconjunction(frame);
+    }
+    ;
+    if (frame.type === 'disjunction') {
+        return nextdisjunction(frame);
+    }
+    ;
+    if (frame.type === 'view') {
+        return nextview(frame);
+    }
+    ;
+    if (frame.type === 'rule') {
+        return nextrule(frame);
+    }
+    ;
+    return false;
+}
+function backframe(frame) {
+    if (frame.type === 'atom') {
+        return backatom(frame);
+    }
+    ;
+    if (frame.type === 'negation') {
+        return backnegation(frame);
+    }
+    ;
+    if (frame.type === 'conjunction') {
+        return backconjunction(frame);
+    }
+    ;
+    if (frame.type === 'disjunction') {
+        return backdisjunction(frame);
+    }
+    ;
+    if (frame.type === 'view') {
+        return backview(frame);
+    }
+    ;
+    if (frame.type === 'rule') {
+        return backrule(frame);
+    }
+    ;
+    return false;
+}
+//------------------------------------------------------------------------------
+function callatom(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    if (query === 'true') {
+        frame.caller.task = 'next';
+        return frame.caller;
+    }
+    ;
+    if (query === 'false') {
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    if (basep(query, rules)) {
+        return makeframe('base', query, alist, facts, rules, 'call', frame);
+    }
+    ;
+    return makeframe('view', query, alist, facts, rules, 'call', frame);
+}
+function redoatom(frame) {
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+function nextatom(frame) {
+    frame.caller.task = 'next';
+    return frame.caller;
+}
+function backatom(frame) {
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callsame(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var ol = [];
+    frame.ol = ol;
+    if (vnifyp(query[1], alist, query[2], alist, ol)) {
+        frame.caller.task = 'next';
+        return frame.caller;
+    }
+    ;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+function redosame(frame) {
+    var ol = frame.ol;
+    backup(ol);
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function calldistinct(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var ol = [];
+    if (vnifyp(query[1], alist, query[2], alist, ol)) {
+        backup(ol);
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    frame.caller.task = 'next';
+    return frame.caller;
+}
+function redodistinct(frame) {
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function calleval(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var args = seq();
+    for (var i = 1; i < query.length; i++) {
+        var arg = pluug(query[i], alist, alist);
+        if (varp(arg)) {
+            frame.caller.task = 'back';
+            return frame.caller;
+        }
+        else {
+            args[args.length] = arg;
+        }
+    }
+    ;
+    if (eval(query[0]).apply(null, args)) {
+        frame.caller.task = 'next';
+        return frame.caller;
+    }
+    ;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+function redoeval(frame) {
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callevaluation(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    var val = heapvalue(pluug(query[1], alist, alist), facts, rules);
+    var ol = [];
+    frame.ol = ol;
+    if (val && vnifyp(query[2], alist, val, alist, ol)) {
+        frame.caller.task = 'next';
+        return frame.caller;
+    }
+    ;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+function redoevaluation(frame) {
+    var ol = frame.ol;
+    backup(ol);
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callmember(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    frame.list = pluug(query[2], alist, alist);
+    frame.ol = [];
+    return redomember(frame);
+}
+function redomember(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var item = query[1];
+    var list = frame.list;
+    var ol = frame.ol;
+    backup(ol);
+    while (!symbolp(list) && list[0] === 'cons') {
+        if (vnifyp(item, alist, list[1], alist, ol)) {
+            list = list[2];
+            frame.list = list;
+            frame.caller.task = 'next';
+            return frame.caller;
+        }
+        ;
+        list = list[2];
+    }
+    ;
+    frame.list = list;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callnegation(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    var subgoal = query[1];
+    var type = gettype(subgoal, rules);
+    return makeframe(type, query[1], alist, facts, rules, 'call', frame);
+}
+function redonegation(frame) {
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+function nextnegation(frame) {
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+function backnegation(frame) {
+    frame.caller.task = 'next';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callconjunction(frame) {
+    frame.index = 0;
+    frame.generators = [];
+    frame.task = 'next';
+    return nextconjunction(frame);
+}
+function redoconjunction(frame) {
+    var query = frame.query;
+    var index = frame.index;
+    if (frame.generators) {
+        frame.generators[index].task = 'redo';
+        return frame.generators[index];
+    }
+    ;
+    return backconjunction(frame);
+}
+function nextconjunction(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    var index = frame.index;
+    if (index === query.length - 1) {
+        frame.caller.task = 'next';
+        return frame.caller;
+    }
+    ;
+    index++;
+    frame.index = index;
+    var subgoal = query[index];
+    var type = gettype(subgoal, rules);
+    var subframe = makeframe(type, subgoal, alist, facts, rules, 'call', frame);
+    frame.generators[index] = subframe;
+    return subframe;
+}
+function backconjunction(frame) {
+    var index = frame.index;
+    if (index === 1) {
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    index--;
+    frame.index = index;
+    frame.generators[index].task = 'redo';
+    return frame.generators[index];
+}
+//------------------------------------------------------------------------------
+function calldisjunction(frame) {
+    var query = frame.query;
+    if (query.length === 1) {
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    frame.index = 0;
+    return backdisjunction(frame);
+}
+function redodisjunction(frame) {
+    var query = frame.query;
+    var index = frame.index;
+    if (query.length === 1) {
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    var subframe = frame.generator;
+    subframe.task = 'redo';
+    return subframe;
+}
+function nextdisjunction(frame) {
+    frame.caller.task = 'next';
+    return frame.caller;
+}
+function backdisjunction(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    var index = frame.index;
+    index++;
+    frame.index = index;
+    if (index >= query.length) {
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    var subgoal = query[index];
+    var type = gettype(subgoal, rules);
+    var subframe = makeframe(type, subgoal, alist, facts, rules, 'call', frame);
+    frame.generator = subframe;
+    return subframe;
+}
+//------------------------------------------------------------------------------
+function callbase(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    frame.data = envlookupfacts(query, alist, facts);
+    frame.index = 0;
+    frame.ol = [];
+    return redobase(frame);
+}
+function redobase(frame) {
+    var p = frame.query;
+    var al = frame.alist;
+    var data = frame.data;
+    var index = frame.index;
+    var ol = frame.ol;
+    backup(ol);
+    while (index < data.length) {
+        instantiations++;
+        if (vnifyp(p, al, data[index], al, ol)) {
+            index++;
+            frame.index = index;
+            frame.caller.task = 'next';
+            return frame.caller;
+        }
+        ;
+        index++;
+    }
+    ;
+    frame.index = index;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function calltrue(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var ds = getdataset(query[2]);
+    var data = envlookupfacts(query[1], alist, ds);
+    frame.data = data;
+    frame.index = 0;
+    frame.ol = [];
+    return redotrue(frame);
+}
+function redotrue(frame) {
+    var query = frame.query;
+    var alist = frame.alist;
+    var data = frame.data;
+    var index = frame.index;
+    var ol = frame.ol;
+    backup(ol);
+    while (index < data.length) {
+        instantiations++;
+        if (vnifyp(query[1], alist, data[index], alist, ol)) {
+            index++;
+            frame.index = index;
+            frame.caller.task = 'next';
+            return frame.caller;
+        }
+        ;
+        index++;
+    }
+    ;
+    frame.index = index;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callview(frame) {
+    frame.data = lookuprules(frame.query, frame.rules);
+    frame.index = 0;
+    frame.blist = {};
+    frame.ol = [];
+    frame.task = 'redo';
+    return backview(frame);
+}
+function redoview(frame) {
+    var subframe = frame.generator;
+    if (subframe) {
+        subframe.task = 'redo';
+        return subframe;
+    }
+    ;
+    return backview(frame);
+}
+function nextview(frame) {
+    frame.caller.task = 'next';
+    return frame.caller;
+}
+function backview(frame) {
+    var p = frame.query;
+    var al = frame.alist;
+    var bl = frame.blist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    var data = frame.data;
+    var index = frame.index;
+    var ol = frame.ol;
+    backup(ol);
+    while (index < data.length) {
+        inferences++;
+        var datum = data[index];
+        index++;
+        if (datum[0] === 'rule') {
+            if (vnifyp(datum[1], bl, p, al, ol)) {
+                frame.index = index;
+                var subframe = makeframe('rule', datum, bl, facts, rules, 'call', frame);
+                frame.generator = subframe;
+                return subframe;
+            }
+        }
+        else if (vnifyp(p, al, datum, bl, ol)) {
+            frame.index = index;
+            frame.caller.task = 'next';
+            return frame.caller;
+        }
+    }
+    ;
+    frame.index = index;
+    frame.caller.task = 'back';
+    return frame.caller;
+}
+//------------------------------------------------------------------------------
+function callrule(frame) {
+    frame.index = 1;
+    frame.generators = [];
+    frame.task = 'next';
+    return nextrule(frame);
+}
+function redorule(frame) {
+    var query = frame.query;
+    var index = frame.index;
+    if (frame.generators) {
+        frame.generators[index].task = 'redo';
+        return frame.generators[index];
+    }
+    ;
+    return backrule(frame);
+}
+function nextrule(frame) {
+    var rule = frame.query;
+    var alist = frame.alist;
+    var facts = frame.facts;
+    var rules = frame.rules;
+    var index = frame.index;
+    if (index === rule.length - 1) {
+        frame.caller.task = 'next';
+        return frame.caller;
+    }
+    ;
+    index++;
+    frame.index = index;
+    var subgoal = rule[index];
+    var type = gettype(subgoal, rules);
+    var subframe = makeframe(type, subgoal, alist, facts, rules, 'call', frame);
+    frame.generators[index] = subframe;
+    return subframe;
+}
+function backrule(frame) {
+    var index = frame.index;
+    if (index === 2) {
+        frame.caller.task = 'back';
+        return frame.caller;
+    }
+    ;
+    index--;
+    frame.index = index;
+    frame.generators[index].task = 'redo';
+    return frame.generators[index];
+}
+//------------------------------------------------------------------------------
+function heapvalue(p, facts, rules) {
+    if (varp(p)) {
+        return false;
+    }
+    ;
+    if (symbolp(p)) {
+        return p;
+    }
+    ;
+    if (p[0] === 'map') {
+        return heapvaluemap(p, facts, rules);
+    }
+    ;
+    if (p[0] === 'setofall') {
+        return heapvaluesetofall(p, facts, rules);
+    }
+    ;
+    if (p[0] === 'countofall') {
+        return heapvaluecountofall(p, facts, rules);
+    }
+    ;
+    if (p[0] === 'choose') {
+        return heapvaluechoose(p, facts, rules);
+    }
+    ;
+    if (p[0] === 'if') {
+        return heapvalueif(p, facts, rules);
+    }
+    ;
+    var args = seq();
+    for (var i = 1; i < p.length; i++) {
+        var arg = heapvalue(p[i], facts, rules);
+        if (arg !== false) {
+            args[i - 1] = arg;
+        }
+        else {
+            return false;
+        }
+    }
+    ;
+    return heapapply(p[0], args, facts, rules);
+}
+function heapvaluemap(p, facts, rules) {
+    var fun = heapvalue(p[1], facts, rules);
+    var arglist = heapvalue(p[2], facts, rules);
+    return heapval(fun, arglist, facts, rules);
+}
+function heapval(fun, arglist, facts, rules) {
+    if (arglist === nil) {
+        return nil;
+    }
+    ;
+    if (symbolp(arglist) || arglist[0] !== 'cons') {
+        return false;
+    }
+    ;
+    var result = heapapply(fun, seq(arglist[1]), facts, rules);
+    if (result === false) {
+        return false;
+    }
+    ;
+    var results = heapval(fun, arglist[2], facts, rules);
+    if (results === false) {
+        return false;
+    }
+    ;
+    return seq('cons', result, results);
+}
+function heapvaluesetofall(p, facts, rules) { return listify(heapfinds(p[1], p[2], facts, rules)); }
+function heapvaluecountofall(p, facts, rules) { return heapfinds(p[1], p[2], facts, rules).length.toString(); }
+function heapvaluechoose(p, facts, rules) {
+    var possibilities = heapfinds(p[1], p[2], facts, rules);
+    if (possibilities.length === 0) {
+        return false;
+    }
+    ;
+    var n = Math.floor(Math.random() * possibilities.length);
+    return possibilities[n];
+}
+function heapvalueif(p, facts, rules) {
+    for (var i = 1; i < p.length; i = i + 2) {
+        var result = calln(1, heapgen(p[i + 1], p[i], facts, rules));
+        if (result.length > 0) {
+            return heapvalue(result[0], facts, rules);
+        }
+    }
+    ;
+    return false;
+}
+function heapapply(fun, args, facts, rules) {
+    if (builtinp(fun)) {
+        return heapapplybuiltin(fun, args, facts, rules);
+    }
+    ;
+    if (mathp(fun)) {
+        return heapapplymath(fun, args, facts, rules);
+    }
+    ;
+    if (listop(fun)) {
+        return heapapplylist(fun, args, facts, rules);
+    }
+    ;
+    return heapapplyrs(fun, args, facts, rules);
+}
+function heapapplybuiltin(fun, args, facts, rules) { return eval(fun).apply(null, args); }
+function heapapplymath(fun, args, facts, rules) { return stringize(Math[fun].apply(null, args)); }
+function heapapplylist(fun, args, facts, rules) {
+    var args = numlistify(args[0]);
+    return stringize(eval(fun).call(null, args));
+}
+function heapapplyrs(fun, args, facts, rules) {
+    var result = seq(fun).concat(args);
+    //var data = indexees('definition',rules);
+    var data = lookuprules(fun, rules);
+    var flag = false;
+    for (var i = 0; i < data.length; i++) {
+        var bl = {};
+        var ol = seq();
+        if (data[i][0] === 'definition') {
+            if (operator(data[i][1]) === fun) {
+                flag = true;
+            }
+            ;
+            if (vnifyp(data[i][1], bl, result, bl, ol)) {
+                var term = pluug(data[i][2], bl, bl);
+                var answer = heapvalue(term, facts, rules);
+                backup(ol);
+                if (answer) {
+                    return answer;
+                }
+            }
+        }
+    }
+    if (flag) {
+        return false;
+    }
+    ;
+    return result;
 }
 //==============================================================================
 // Hypothetical reasoning
@@ -4595,6 +4758,7 @@ function tempfinds(result, query, temprules, facts, rules) {
 // tracefindn
 //------------------------------------------------------------------------------
 var traces = true;
+var traces = true;
 var traceoutputchannelfunction = console.log;
 function setTraceOutputFunc(func) {
     traceoutputchannelfunction = func;
@@ -5237,8 +5401,7 @@ function debugsomeexit(n, x, xl, p, pl, al, cont, results, facts, rules) {
 //==============================================================================
 // special relations and operators
 //==============================================================================
-var specials = ['mutex', 'leq', 'symleq'];
-// ['mutex','less','leq','greater','geq','symless','symleq','symgreater','symgeq'];
+var specials = ['mutex', 'leq', 'less', 'symleq', 'symless'];
 var builtins = ["bitlsh", "bitand", "bitlsh", "bitior", "bitnot",
     "hastype", "plus", "minus", "times", "quotient", "remainder",
     "symbolize", "newsymbolize",
@@ -5509,7 +5672,7 @@ function stringize(s) {
     return s + '';
 }
 function symbolize(s) {
-    s = s.replace(/[^a-z0-9]/gi, '');
+    s = s.replace(/[^a-z_0-9]/gi, '');
     return s.toLowerCase();
 }
 function newsymbolize(s) {
@@ -5679,7 +5842,15 @@ function listp(x) {
     ;
     return false;
 }
-function append(l1, l2) {
+function append() {
+    var ans = nil;
+    for (var i = 0; i < arguments.length; i++) {
+        ans = binaryappend(ans, arguments[i]);
+    }
+    ;
+    return ans;
+}
+function binaryappend(l1, l2) {
     if (nullp(l1)) {
         return l2;
     }
@@ -6990,12 +7161,16 @@ function displayrule(p) {
         return p;
     }
     ;
-    if (p[0] === 'rule') {
-        return disprule(p);
-    }
-    ;
     if (p[0] === 'transition') {
         return disptransition(p);
+    }
+    ;
+    if (p[0] === 'definition') {
+        return dispdefinition(p);
+    }
+    ;
+    if (p[0] === 'rule') {
+        return disprule(p);
     }
     ;
     if (p[0] === 'handler') {
@@ -7003,23 +7178,6 @@ function displayrule(p) {
     }
     ;
     return grindatom(p);
-}
-function disprule(p) {
-    if (p.length == 2) {
-        return grind(p[1]) + ' :- true\n';
-    }
-    ;
-    if (p.length == 3) {
-        return grind(p[1]) + ' :- ' + grind(p[2]) + '\n';
-    }
-    ;
-    var exp = grind(p[1]) + ' :-\n';
-    for (var i = 2; i < p.length - 1; i++) {
-        exp = exp + '  ' + grindit(p[i], '&', '&') + ' &\n';
-    }
-    ;
-    exp += '  ' + grindit(p[p.length - 1], '&', '&') + '\n';
-    return exp;
 }
 function disptransition(p) {
     if (p.length < 2) {
@@ -7040,6 +7198,24 @@ function disptransition(p) {
     }
     ;
     exp += '  ' + grind(p[2][p.length - 1]) + '\n';
+    return exp;
+}
+function dispdefinition(p) { return grind(p[1]) + ' := ' + grind(p[2]) + '\n'; }
+function disprule(p) {
+    if (p.length == 2) {
+        return grind(p[1]) + ' :- true\n';
+    }
+    ;
+    if (p.length == 3) {
+        return grind(p[1]) + ' :- ' + grind(p[2]) + '\n';
+    }
+    ;
+    var exp = grind(p[1]) + ' :-\n';
+    for (var i = 2; i < p.length - 1; i++) {
+        exp = exp + '  ' + grindit(p[i], '&', '&') + ' &\n';
+    }
+    ;
+    exp += '  ' + grindit(p[p.length - 1], '&', '&') + '\n';
     return exp;
 }
 function disphandler(p) { return grind(p[1]) + ' :: ' + grind(p[2]) + '\n'; }
@@ -7576,6 +7752,7 @@ function getrelations(datum, rs) {
 module.exports = {
     read: read,
     readdata: readdata,
+    grind: grind,
     grindem: grindem,
     compfinds: compfinds,
     definemorefacts: definemorefacts,

@@ -25,8 +25,6 @@
 // Sentential Representation
 //==============================================================================
 
-const { debug } = require("console")
-
 function symbolp (x)
  {return typeof x==='string'}
 
@@ -1342,7 +1340,7 @@ function baseapplyrs (fun,args,facts,rules)
   return result}
 
 //==============================================================================
-// Full inference
+// comp series
 //==============================================================================
 //------------------------------------------------------------------------------
 // compfindp
@@ -1660,10 +1658,272 @@ function compsomeexit (n,x,pl,al,cont,results,facts,rules)
 
 //------------------------------------------------------------------------------
 // compgen
-// call
 //------------------------------------------------------------------------------
 
 function compgen (x,p,facts,rules)
+ {var type = gettype(p,rules);
+  var al = {};
+  var toplevel = {};
+  toplevel.type = 'toplevel';
+  toplevel.aspect = x;
+  toplevel.alist = al;
+  return makeframe(type,p,al,facts,rules,'call',toplevel)}
+
+//------------------------------------------------------------------------------
+
+function compvalue (p,facts,rules)
+ {if (varp(p)) {return false};
+  if (symbolp(p)) {return p};
+  if (p[0]==='map') {return compvaluemap(p,facts,rules)};
+  if (p[0]==='setofall') {return compvaluesetofall(p,facts,rules)};
+  if (p[0]==='countofall') {return compvaluecountofall(p,facts,rules)};
+  if (p[0]==='choose') {return compvaluechoose(p,facts,rules)};
+  if (p[0]==='if') {return compvalueif(p,facts,rules)};
+  var args = seq();
+  for (var i=1; i<p.length; i++)
+      {var arg = compvalue(p[i],facts,rules);
+       if (arg!==false) {args[i-1] = arg} else {return false}};
+  return compapply(p[0],args,facts,rules)}
+
+function compvaluemap (p,facts,rules)
+ {var fun = compvalue(p[1],facts,rules);
+  var arglist = compvalue(p[2],facts,rules);
+  return compval(fun,arglist,facts,rules)}
+
+function compval (fun,arglist,facts,rules)
+ {if (arglist===nil) {return nil};
+  if (symbolp(arglist) || arglist[0]!=='cons') {return false};
+  var result = compapply(fun,seq(arglist[1]),facts,rules);
+  if (result===false) {return false};
+  var results = compval(fun,arglist[2],facts,rules);
+  if (results===false) {return false};
+  return seq('cons',result,results)}
+
+function compvaluesetofall (p,facts,rules)
+ {return listify(compfinds(p[1],p[2],facts,rules))}
+  
+function compvaluecountofall (p,facts,rules)
+ {return compfinds(p[1],p[2],facts,rules).length.toString()}
+
+function compvaluechoose (p,facts,rules)
+ {var possibilities = compfinds(p[1],p[2],facts,rules);
+  if (possibilities.length===0) {return false};
+  var n = Math.floor(Math.random()*possibilities.length);
+  return possibilities[n]}
+
+function compvalueif (p,facts,rules)
+ {for (var i=1; i<p.length; i=i+2)
+      {var result = compfindx(p[i+1],p[i],facts,rules);
+       if (result) {return compvalue(result,facts,rules)}};
+  return false}
+
+function compapply (fun,args,facts,rules)
+ {if (builtinp(fun)) {return compapplybuiltin(fun,args,facts,rules)};
+  if (mathp(fun)) {return compapplymath(fun,args,facts,rules)};
+  if (listop(fun)) {return compapplylist(fun,args,facts,rules)};
+  return compapplyrs (fun,args,facts,rules)}
+
+function compapplybuiltin (fun,args,facts,rules)
+ {return eval(fun).apply(null,args)}
+
+function compapplymath (fun,args,facts,rules)
+ {return stringize(Math[fun].apply(null,args))}
+
+function compapplylist (fun,args,facts,rules)
+ {var args = numlistify(args[0]);
+  return stringize(eval(fun).call(null,args))}
+
+function compapplyrs (fun,args,facts,rules)
+ {var result = seq(fun).concat(args);
+  //var data = indexees('definition',rules);
+  var data = lookuprules(fun,rules);
+  var flag = false;
+  for (var i=0; i<data.length; i++)
+      {var bl = {};
+       var ol = seq();
+       if (data[i][0]==='definition')
+          {if (operator(data[i][1])===fun) {flag = true};
+           if (vnifyp(data[i][1],bl,result,bl,ol))
+              {var term = pluug(data[i][2],bl,bl);
+               var answer = compvalue(term,facts,rules);
+               backup(ol);
+               if (answer) {return answer}}}}
+  if (flag) {return false};
+  return result}
+
+//------------------------------------------------------------------------------
+
+var exportables = [];
+
+function compexecute (seed,facts,rules)
+ {var updates = compexpand(seed,facts,rules);
+  var outputs = [];
+  for (var i=0; i<updates.length; i++)
+      {var update = updates[i];
+       if (symbolp(update)) {continue};
+       if (update[0]==='delete') {compdrop(update[1],facts)};
+       if (update[0]==='not') {compdrop(update[1],facts)}};
+  for (var i=0; i<updates.length; i++)
+      {var update = updates[i];
+       if (symbolp(update)) {compsave(update,facts); continue};
+       if (update[0]==='insert') {compsave(update[1],facts); continue};
+       if (update[0]==='enqueue') {outputs.push(update[1]); continue};
+       if (findq(update[0],exportables)) {outputs.push(update); continue};
+       if (update[0]==='not') {continue};
+       compsave(update,facts)};
+  return outputs}
+
+function compexpand (seed,facts,rules)
+ {if (symbolp(seed)) {return compexpandrs(seed,facts,rules)};
+  if (seed[0]==='not') {return [seed]};
+  if (seed[0]==='and')
+     {var updates = [];
+      for (var i=1; i<seed.length; i++)
+          {updates = updates.concat(compexpand(seed[i],facts,rules))}
+      return updates};
+  if (seed[0]==='transition') {return compexpandtransition(seed,facts,rules)};
+  return compexpandrs(seed,facts,rules)}
+
+function compexpandtransition (seed,facts,rules)
+ {var updates = [];
+  var changes = compfinds(seed[2],seed[1],facts,rules);
+  for (j=0; j<changes.length; j++)
+      {updates = updates.concat(compexpand(changes[j],facts,rules))};
+  return updates}
+
+function compexpandrs (seed,facts,rules)
+ {var updates = [];
+  //var data = indexees('handler',rules);
+  var data = lookuprules(seed,rules);
+  var flag = false;
+  for (var i=0; i<data.length; i++)
+      {if (symbolp(data[i])) {continue};
+       if (data[i][0]!=='handler') {continue};
+       var bl;
+       if (bl = matcher(data[i][1],seed))
+          {flag = true;
+           var rule = plug(data[i][2],bl);
+           updates = updates.concat(compexpand(rule,facts,rules))}};
+  if (flag) {return updates};
+  return [seed]}
+
+var expanddepth = 100;
+
+function compexpand (seed,facts,rules)
+ {return zniquify(compexpanddepth(seed,facts,rules,0))}
+
+function compexpanddepth (seed,facts,rules,depth)
+ {if (symbolp(seed)) {return compexpanddepthrs(seed,facts,rules,depth)};
+  if (seed[0]==='not') {return [seed]};
+  if (seed[0]==='and') {return compexpanddepthand(seed,facts,rules,depth)};
+  if (seed[0]==='transition') {return compexpanddepthtransition(seed,facts,rules,depth)};
+  if (depth>expanddepth) {return []};
+  return compexpanddepthrs(seed,facts,rules,depth)}
+
+function compexpanddepthand (seed,facts,rules,depth)
+ {var updates = [];
+  for (var i=1; i<seed.length; i++)
+      {updates = updates.concat(compexpanddepth(seed[i],facts,rules,depth))};
+  return updates}
+
+function compexpanddepthtransition (seed,facts,rules,depth)
+ {var updates = [];
+  var changes = compfinds(seed[2],seed[1],facts,rules);
+  for (var i=0; i<changes.length; i++)
+      {updates = updates.concat(compexpanddepth(changes[i],facts,rules,depth))};
+  return updates}
+
+function compexpanddepthrs (seed,facts,rules,depth)
+ {//var data = indexees('handler',rules);
+  var data = lookuprules(seed,rules);
+  var flag = false;
+  var updates = [];
+  for (var i=0; i<data.length; i++)
+      {if (symbolp(data[i])) {continue};
+       if (data[i][0]!=='handler') {continue};
+       var bl;
+       if (bl = matcher(data[i][1],seed))
+          {flag = true;
+           var rule = plug(data[i][2],bl);
+           updates = updates.concat(compexpanddepth(rule,facts,rules,depth+1))}};
+  if (flag) {return updates};
+  return [seed]}
+
+function compsave (p,facts)
+ {if (symbolp(p)) {return savefact(p,facts)};
+  if (p[0]==='true') {return putfact(p[1],p[2])};
+  return savefact(p,facts)}
+
+function compdrop (p,facts)
+ {if (symbolp(p)) {return dropfact(p,facts)};
+  if (p[0]==='true') {return remfact(p[1],p[2])};
+  return dropfact(p,facts)}
+
+//------------------------------------------------------------------------------
+
+function compupdate (facts,rules)
+ {var updates = compupdates(facts,rules);
+  for (var i=0; i<updates.length; i++)
+      {var update = updates[i];
+       if (symbolp(update)) {continue};
+       if (update[0]==='not') {compdrop(update[1],facts)}};
+  for (var i=0; i<updates.length; i++)
+      {var update = updates[i];
+       if (symbolp(update)) {compsave(update,facts)};
+       if (update[0]==='not') {continue};
+       compsave(update,facts)};
+  return true}
+
+function compupdates (facts,rules)
+ {var updates = [];
+  var data = rules; // indexees('transition',rules);
+  for (var i=0; i<data.length; i++)
+      {if (!symbolp(data[i]) && data[i][0]==='transition')
+          {updates = updates.concat(compexpand(data[i],facts,rules))}};
+  return updates}
+
+//------------------------------------------------------------------------------
+
+function comptransform (condition,action,facts,rules)
+ {return compexecute(seq('transition',condition,action),facts,rules)}
+
+function comptransform (condition,action,facts,rules)
+ {var updates = [];
+  var changes = compfinds(action,condition,facts,rules);
+  for (i=0; i<changes.length; i++)
+      {updates = updates.concat(compexpand(changes[i],facts,rules))};
+  for (var i=0; i<updates.length; i++)
+      {var update = updates[i];
+       if (symbolp(update)) {continue};
+       if (update[0]==='not') {compdrop(update[1],facts)}};
+  for (var i=0; i<updates.length; i++)
+      {var update = updates[i];
+       if (symbolp(update)) {compsave(update,facts)};
+       if (update[0]==='not') {continue};
+       compsave(update,facts)};
+  return true}
+
+//==============================================================================
+// heap series
+//==============================================================================
+
+function heapfindp (query,facts,rules)
+ {return (heapfindx('true',query,facts,rules)==='true')}
+
+function heapfindx (result,query,facts,rules)
+ {var answers = heapfindn(1,result,query,facts,rules);
+  if (answers.length>0) {return answers[0]};
+  return false}
+
+function heapfinds (result,query,facts,rules)
+ {return zniquify(calls(heapgen(result,query,facts,rules)))}
+
+function heapfindn (n,result,query,facts,rules)
+ {return calln(n,heapgen(result,query,facts,rules))}
+
+//==============================================================================
+
+function heapgen (x,p,facts,rules)
  {var type = gettype(p,rules);
   var al = {};
   var toplevel = {};
@@ -1741,6 +2001,8 @@ function loop (frame)
         if (frame.task==='back') {return false};
         return false};
     frame = processframe(frame)}}
+
+//------------------------------------------------------------------------------
 
 function processframe (frame)
  {var task = frame.task;
@@ -1888,7 +2150,7 @@ function callevaluation (frame)
   var alist = frame.alist;
   var facts = frame.facts;
   var rules = frame.rules;
-  var val = compvalue(pluug(query[1],alist,alist),facts,rules);
+  var val = heapvalue(pluug(query[1],alist,alist),facts,rules);
   var ol = [];
   frame.ol = ol;
   if (val && vnifyp(query[2],alist,val,alist,ol))
@@ -2192,69 +2454,69 @@ function backrule (frame)
 
 //------------------------------------------------------------------------------
 
-function compvalue (p,facts,rules)
+function heapvalue (p,facts,rules)
  {if (varp(p)) {return false};
   if (symbolp(p)) {return p};
-  if (p[0]==='map') {return compvaluemap(p,facts,rules)};
-  if (p[0]==='setofall') {return compvaluesetofall(p,facts,rules)};
-  if (p[0]==='countofall') {return compvaluecountofall(p,facts,rules)};
-  if (p[0]==='choose') {return compvaluechoose(p,facts,rules)};
-  if (p[0]==='if') {return compvalueif(p,facts,rules)};
+  if (p[0]==='map') {return heapvaluemap(p,facts,rules)};
+  if (p[0]==='setofall') {return heapvaluesetofall(p,facts,rules)};
+  if (p[0]==='countofall') {return heapvaluecountofall(p,facts,rules)};
+  if (p[0]==='choose') {return heapvaluechoose(p,facts,rules)};
+  if (p[0]==='if') {return heapvalueif(p,facts,rules)};
   var args = seq();
   for (var i=1; i<p.length; i++)
-      {var arg = compvalue(p[i],facts,rules);
+      {var arg = heapvalue(p[i],facts,rules);
        if (arg!==false) {args[i-1] = arg} else {return false}};
-  return compapply(p[0],args,facts,rules)}
+  return heapapply(p[0],args,facts,rules)}
 
-function compvaluemap (p,facts,rules)
- {var fun = compvalue(p[1],facts,rules);
-  var arglist = compvalue(p[2],facts,rules);
-  return compval(fun,arglist,facts,rules)}
+function heapvaluemap (p,facts,rules)
+ {var fun = heapvalue(p[1],facts,rules);
+  var arglist = heapvalue(p[2],facts,rules);
+  return heapval(fun,arglist,facts,rules)}
 
-function compval (fun,arglist,facts,rules)
+function heapval (fun,arglist,facts,rules)
  {if (arglist===nil) {return nil};
   if (symbolp(arglist) || arglist[0]!=='cons') {return false};
-  var result = compapply(fun,seq(arglist[1]),facts,rules);
+  var result = heapapply(fun,seq(arglist[1]),facts,rules);
   if (result===false) {return false};
-  var results = compval(fun,arglist[2],facts,rules);
+  var results = heapval(fun,arglist[2],facts,rules);
   if (results===false) {return false};
   return seq('cons',result,results)}
 
-function compvaluesetofall (p,facts,rules)
- {return listify(compfinds(p[1],p[2],facts,rules))}
+function heapvaluesetofall (p,facts,rules)
+ {return listify(heapfinds(p[1],p[2],facts,rules))}
   
-function compvaluecountofall (p,facts,rules)
- {return compfinds(p[1],p[2],facts,rules).length.toString()}
+function heapvaluecountofall (p,facts,rules)
+ {return heapfinds(p[1],p[2],facts,rules).length.toString()}
 
-function compvaluechoose (p,facts,rules)
- {var possibilities = compfinds(p[1],p[2],facts,rules);
+function heapvaluechoose (p,facts,rules)
+ {var possibilities = heapfinds(p[1],p[2],facts,rules);
   if (possibilities.length===0) {return false};
   var n = Math.floor(Math.random()*possibilities.length);
   return possibilities[n]}
 
-function compvalueif (p,facts,rules)
+function heapvalueif (p,facts,rules)
  {for (var i=1; i<p.length; i=i+2)
-      {var result = compfindx(p[i+1],p[i],facts,rules);
-       if (result) {return compvalue(result,facts,rules)}};
+      {var result = calln(1,heapgen(p[i+1],p[i],facts,rules));
+       if (result.length>0) {return heapvalue(result[0],facts,rules)}};
   return false}
 
-function compapply (fun,args,facts,rules)
- {if (builtinp(fun)) {return compapplybuiltin(fun,args,facts,rules)};
-  if (mathp(fun)) {return compapplymath(fun,args,facts,rules)};
-  if (listop(fun)) {return compapplylist(fun,args,facts,rules)};
-  return compapplyrs (fun,args,facts,rules)}
+function heapapply (fun,args,facts,rules)
+ {if (builtinp(fun)) {return heapapplybuiltin(fun,args,facts,rules)};
+  if (mathp(fun)) {return heapapplymath(fun,args,facts,rules)};
+  if (listop(fun)) {return heapapplylist(fun,args,facts,rules)};
+  return heapapplyrs(fun,args,facts,rules)}
 
-function compapplybuiltin (fun,args,facts,rules)
+function heapapplybuiltin (fun,args,facts,rules)
  {return eval(fun).apply(null,args)}
 
-function compapplymath (fun,args,facts,rules)
+function heapapplymath (fun,args,facts,rules)
  {return stringize(Math[fun].apply(null,args))}
 
-function compapplylist (fun,args,facts,rules)
+function heapapplylist (fun,args,facts,rules)
  {var args = numlistify(args[0]);
   return stringize(eval(fun).call(null,args))}
 
-function compapplyrs (fun,args,facts,rules)
+function heapapplyrs (fun,args,facts,rules)
  {var result = seq(fun).concat(args);
   //var data = indexees('definition',rules);
   var data = lookuprules(fun,rules);
@@ -2266,163 +2528,11 @@ function compapplyrs (fun,args,facts,rules)
           {if (operator(data[i][1])===fun) {flag = true};
            if (vnifyp(data[i][1],bl,result,bl,ol))
               {var term = pluug(data[i][2],bl,bl);
-               var answer = compvalue(term,facts,rules);
+               var answer = heapvalue(term,facts,rules);
                backup(ol);
                if (answer) {return answer}}}}
   if (flag) {return false};
   return result}
-
-//------------------------------------------------------------------------------
-
-var exportables = [];
-
-function compexecute (seed,facts,rules)
- {var updates = compexpand(seed,facts,rules);
-  var outputs = [];
-  for (var i=0; i<updates.length; i++)
-      {var update = updates[i];
-       if (symbolp(update)) {continue};
-       if (update[0]==='delete') {compdrop(update[1],facts)};
-       if (update[0]==='not') {compdrop(update[1],facts)}};
-  for (var i=0; i<updates.length; i++)
-      {var update = updates[i];
-       if (symbolp(update)) {compsave(update,facts); continue};
-       if (update[0]==='insert') {compsave(update[1],facts); continue};
-       if (update[0]==='enqueue') {outputs.push(update[1]); continue};
-       if (findq(update[0],exportables)) {outputs.push(update); continue};
-       if (update[0]==='not') {continue};
-       compsave(update,facts)};
-  return outputs}
-
-function compexpand (seed,facts,rules)
- {if (symbolp(seed)) {return compexpandrs(seed,facts,rules)};
-  if (seed[0]==='not') {return [seed]};
-  if (seed[0]==='and')
-     {var updates = [];
-      for (var i=1; i<seed.length; i++)
-          {updates = updates.concat(compexpand(seed[i],facts,rules))}
-      return updates};
-  if (seed[0]==='transition') {return compexpandtransition(seed,facts,rules)};
-  return compexpandrs(seed,facts,rules)}
-
-function compexpandtransition (seed,facts,rules)
- {var updates = [];
-  var changes = compfinds(seed[2],seed[1],facts,rules);
-  for (j=0; j<changes.length; j++)
-      {updates = updates.concat(compexpand(changes[j],facts,rules))};
-  return updates}
-
-function compexpandrs (seed,facts,rules)
- {var updates = [];
-  //var data = indexees('handler',rules);
-  var data = lookuprules(seed,rules);
-  var flag = false;
-  for (var i=0; i<data.length; i++)
-      {if (symbolp(data[i])) {continue};
-       if (data[i][0]!=='handler') {continue};
-       var bl;
-       if (bl = matcher(data[i][1],seed))
-          {flag = true;
-           var rule = plug(data[i][2],bl);
-           updates = updates.concat(compexpand(rule,facts,rules))}};
-  if (flag) {return updates};
-  return [seed]}
-
-var expanddepth = 100;
-
-function compexpand (seed,facts,rules)
- {return zniquify(compexpanddepth(seed,facts,rules,0))}
-
-function compexpanddepth (seed,facts,rules,depth)
- {if (symbolp(seed)) {return compexpanddepthrs(seed,facts,rules,depth)};
-  if (seed[0]==='not') {return [seed]};
-  if (seed[0]==='and') {return compexpanddepthand(seed,facts,rules,depth)};
-  if (seed[0]==='transition') {return compexpanddepthtransition(seed,facts,rules,depth)};
-  if (depth>expanddepth) {return []};
-  return compexpanddepthrs(seed,facts,rules,depth)}
-
-function compexpanddepthand (seed,facts,rules,depth)
- {var updates = [];
-  for (var i=1; i<seed.length; i++)
-      {updates = updates.concat(compexpanddepth(seed[i],facts,rules,depth))};
-  return updates}
-
-function compexpanddepthtransition (seed,facts,rules,depth)
- {var updates = [];
-  var changes = compfinds(seed[2],seed[1],facts,rules);
-  for (var i=0; i<changes.length; i++)
-      {updates = updates.concat(compexpanddepth(changes[i],facts,rules,depth))};
-  return updates}
-
-function compexpanddepthrs (seed,facts,rules,depth)
- {//var data = indexees('handler',rules);
-  var data = lookuprules(seed,rules);
-  var flag = false;
-  var updates = [];
-  for (var i=0; i<data.length; i++)
-      {if (symbolp(data[i])) {continue};
-       if (data[i][0]!=='handler') {continue};
-       var bl;
-       if (bl = matcher(data[i][1],seed))
-          {flag = true;
-           var rule = plug(data[i][2],bl);
-           updates = updates.concat(compexpanddepth(rule,facts,rules,depth+1))}};
-  if (flag) {return updates};
-  return [seed]}
-
-function compsave (p,facts)
- {if (symbolp(p)) {return savefact(p,facts)};
-  if (p[0]==='true') {return putfact(p[1],p[2])};
-  return savefact(p,facts)}
-
-function compdrop (p,facts)
- {if (symbolp(p)) {return dropfact(p,facts)};
-  if (p[0]==='true') {return remfact(p[1],p[2])};
-  return dropfact(p,facts)}
-
-//------------------------------------------------------------------------------
-
-function compupdate (facts,rules)
- {var updates = compupdates(facts,rules);
-  for (var i=0; i<updates.length; i++)
-      {var update = updates[i];
-       if (symbolp(update)) {continue};
-       if (update[0]==='not') {compdrop(update[1],facts)}};
-  for (var i=0; i<updates.length; i++)
-      {var update = updates[i];
-       if (symbolp(update)) {compsave(update,facts)};
-       if (update[0]==='not') {continue};
-       compsave(update,facts)};
-  return true}
-
-function compupdates (facts,rules)
- {var updates = [];
-  var data = rules; // indexees('transition',rules);
-  for (var i=0; i<data.length; i++)
-      {if (!symbolp(data[i]) && data[i][0]==='transition')
-          {updates = updates.concat(compexpand(data[i],facts,rules))}};
-  return updates}
-
-//------------------------------------------------------------------------------
-
-function comptransform (condition,action,facts,rules)
- {return compexecute(seq('transition',condition,action),facts,rules)}
-
-function comptransform (condition,action,facts,rules)
- {var updates = [];
-  var changes = compfinds(action,condition,facts,rules);
-  for (i=0; i<changes.length; i++)
-      {updates = updates.concat(compexpand(changes[i],facts,rules))};
-  for (var i=0; i<updates.length; i++)
-      {var update = updates[i];
-       if (symbolp(update)) {continue};
-       if (update[0]==='not') {compdrop(update[1],facts)}};
-  for (var i=0; i<updates.length; i++)
-      {var update = updates[i];
-       if (symbolp(update)) {compsave(update,facts)};
-       if (update[0]==='not') {continue};
-       compsave(update,facts)};
-  return true}
 
 //==============================================================================
 // Hypothetical reasoning
@@ -3002,6 +3112,8 @@ function tempfinds (result,query,temprules,facts,rules)
 
 var traces = true;
 
+var traces = true;
+
 var traceoutputchannelfunction = console.log;
 
 function setTraceOutputFunc(func) {
@@ -3032,22 +3144,22 @@ function tracedepth (cont)
   if (tracep(operator(cont[0]))) {return (tracedepth(cont[3])+1)};
   return tracedepth(cont[3])}
 
-function tracecall (p,cont)
- {if (!tracep(operator(p))) {return false};
-  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Call: ' + grind(p))}
-
-function traceexit (p,cont)
- {if (!tracep(operator(p))) {return false};
-  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Exit: ' + grind(p));}
-
-function traceredo (p,cont)
- {if (!tracep(operator(p))) {return false};
-  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Redo: ' + grind(p))}
-
-function tracefail (p,cont)
- {if (!tracep(operator(p))) {return false};
-  traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Fail: ' + grind(p))}
-
+  function tracecall (p,cont)
+  {if (!tracep(operator(p))) {return false};
+   traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Call: ' + grind(p))}
+ 
+ function traceexit (p,cont)
+  {if (!tracep(operator(p))) {return false};
+   traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Exit: ' + grind(p));}
+ 
+ function traceredo (p,cont)
+  {if (!tracep(operator(p))) {return false};
+   traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Redo: ' + grind(p))}
+ 
+ function tracefail (p,cont)
+  {if (!tracep(operator(p))) {return false};
+   traceoutputchannelfunction(grindspaces(tracedepth(cont)) + 'Fail: ' + grind(p))}
+ 
 function grindspaces (n)
  {if (n===0) {return ''};
   return grindspaces(n-1) + '| '}
@@ -3459,8 +3571,7 @@ function debugsomeexit (n,x,xl,p,pl,al,cont,results,facts,rules)
 // special relations and operators
 //==============================================================================
 
-var specials =  ['mutex','leq','symleq'];
-// ['mutex','less','leq','greater','geq','symless','symleq','symgreater','symgeq'];
+var specials =  ['mutex','leq','less','symleq','symless'];
 
 var builtins = 
  ["bitlsh","bitand","bitlsh","bitior","bitnot",
@@ -3647,7 +3758,7 @@ function stringize (s)
   return s + ''}
 
 function symbolize (s)
- {s = s.replace(/[^a-z0-9]/gi,'');
+ {s = s.replace(/[^a-z_0-9]/gi,'');
   return s.toLowerCase()}
 
 function newsymbolize (s)
@@ -3762,7 +3873,13 @@ function listp (x)
   if (x[0]==='cons') {return listp(x[2])};
   return false}
 
-function append (l1,l2)
+function append ()
+ {var ans = nil;
+  for (var i=0; i<arguments.length; i++)
+      {ans = binaryappend(ans,arguments[i])};
+  return ans}
+
+function binaryappend (l1,l2)
  {if (nullp(l1)) {return l2};
   if (symbolp(l1)) {return false};
   if (l1[0]!=='cons') {return false};
@@ -4527,19 +4644,11 @@ function displayrules (rules)
 
 function displayrule (p)
  {if (symbolp(p)) {return p};
-  if (p[0]==='rule') {return disprule(p)};
   if (p[0]==='transition') {return disptransition(p)};
+  if (p[0]==='definition') {return dispdefinition(p)};
+  if (p[0]==='rule') {return disprule(p)};
   if (p[0]==='handler') {return disphandler(p)};
   return grindatom(p)}
-
-function disprule (p)
- {if (p.length==2) {return grind(p[1]) + ' :- true\n'};
-  if (p.length==3) {return grind(p[1]) + ' :- ' + grind(p[2]) + '\n'};
-  var exp = grind(p[1]) + ' :-\n';
-  for (var i=2; i<p.length-1; i++)
-      {exp = exp + '  ' + grindit(p[i],'&','&') + ' &\n'};
-  exp +=  '  ' + grindit(p[p.length-1],'&','&') + '\n';
-  return exp}
 
 function disptransition (p)
  {if (p.length<2) {return ''};
@@ -4551,6 +4660,18 @@ function disptransition (p)
   for (var i=1; i<p[2].length-1; i++)
       {exp = exp + '  ' + grind(p[2][i]) + ' &\n'};
   exp +=  '  ' + grind(p[2][p.length-1]) + '\n';
+  return exp}
+
+function dispdefinition (p)
+ {return grind(p[1]) + ' := ' + grind(p[2]) + '\n'}
+
+function disprule (p)
+ {if (p.length==2) {return grind(p[1]) + ' :- true\n'};
+  if (p.length==3) {return grind(p[1]) + ' :- ' + grind(p[2]) + '\n'};
+  var exp = grind(p[1]) + ' :-\n';
+  for (var i=2; i<p.length-1; i++)
+      {exp = exp + '  ' + grindit(p[i],'&','&') + ' &\n'};
+  exp +=  '  ' + grindit(p[p.length-1],'&','&') + '\n';
   return exp}
 
 function disphandler (p)
@@ -4888,6 +5009,7 @@ function getrelations (datum,rs)
 module.exports = {
     read: read,
     readdata: readdata,
+    grind: grind,
     grindem: grindem,
     compfinds: compfinds,
     definemorefacts: definemorefacts,

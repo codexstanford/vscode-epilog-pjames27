@@ -119,6 +119,9 @@ export function epilogCmd_runScript(client: LanguageClient) {
 
         let datasetAbsFilepaths = [];
 
+        // -- Run the query on the dataset(s) --
+
+        client.outputChannel.appendLine("========== " + query + " - Running Query ==========");
         // If the dataset path is not a folder, we will run the query on the content of the dataset file
         if (!fs.lstatSync(datasetAbsFilepath).isDirectory()) {
             datasetAbsFilepaths.push(datasetAbsFilepath);
@@ -128,7 +131,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
             const datasetFilePaths = fs.readdirSync(datasetAbsFilepath).filter(file => file.endsWith('.hdf'));
             // Make the filepaths absolute
             datasetAbsFilepaths = [...datasetAbsFilepaths, ...datasetFilePaths.map(file => datasetAbsFilepath + '\\' + file) ];
-            client.outputChannel.appendLine("------------\nQuery \'" + query + "\' results for folder \'" + datasetRelFilepath +"\':");
+            client.outputChannel.appendLine("====== " + datasetRelFilepath + " - Folder Results ======");
             if (datasetFilePaths.length === 0) {
                 client.outputChannel.appendLine("Folder contains no .hdf files.");
                 return;
@@ -143,18 +146,24 @@ export function epilogCmd_runScript(client: LanguageClient) {
 
             let currDatasetRelFilepath = datasetAbsFilepath.substring(datasetAbsFilepath.lastIndexOf('\\') + 1);
 
+            client.outputChannel.appendLine("==== " + currDatasetRelFilepath + " - File Results ====");
+            
             if (doTrace) {
-                client.outputChannel.appendLine("------\nTrace for file \'" + currDatasetRelFilepath + "\':");
+                client.outputChannel.appendLine("== Trace Results ==");
             }
             const queryResults = queryFunction(epilog_js.read(query), epilog_js.read(query), dataset, ruleset);
             
             // Print the query result to the output channel
             if (queryResults.length === 0) {
-                client.outputChannel.appendLine("------\nQuery \'" + query + "\' results for file \'" + currDatasetRelFilepath + "\': None.");
+                client.outputChannel.appendLine("== Query Results ==");
+                client.outputChannel.appendLine("None.");
             } else {
-                client.outputChannel.appendLine("------\nQuery \'" + query + "\' results for file \'" + currDatasetRelFilepath + "\':");
-                // Remove final newline
-                client.outputChannel.appendLine(epilog_js.grindem(queryResults).slice(0, -1));
+                client.outputChannel.appendLine("== Query Results ==");
+                let count = 1;
+                for (const result of queryResults) {
+                    client.outputChannel.appendLine(count + ". " + epilog_js.grind(result));
+                    count++;
+                }
             }
         }
     }
