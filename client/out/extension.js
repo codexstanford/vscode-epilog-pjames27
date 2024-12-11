@@ -44,8 +44,7 @@ function activate(context) {
             { scheme: 'file', language: language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID }
         ],
         synchronize: {
-            // Notify the server about file changes to '.clientrc files contained in the workspace
-            fileEvents: vscode_1.workspace.createFileSystemWatcher('**/.clientrc')
+            fileEvents: vscode_1.workspace.createFileSystemWatcher('**/*.{hdf,hrf,metadata,epilogscript}'),
         },
         outputChannel: vscode.window.createOutputChannel('Epilog Language Server')
     };

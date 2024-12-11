@@ -71,6 +71,15 @@ connection.onDidChangeConfiguration(change => {
     // Revalidate all open text documents
     documents.all().forEach(validateTextDocument);
 });
+connection.onDidChangeWatchedFiles(event => {
+    documents.all().forEach(validateTextDocument);
+    event.changes.forEach(change => {
+        // Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
+        if (change.type === node_1.FileChangeType.Deleted) {
+            connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
+        }
+    });
+});
 function getDocumentSettings(resource) {
     if (!hasConfigurationCapability) {
         return Promise.resolve(globalSettings);
@@ -100,10 +109,6 @@ async function validateTextDocument(textDocument) {
     const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument);
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
-connection.onDidChangeWatchedFiles(_change => {
-    // Monitored files have change in VSCode
-    connection.console.log('We received a file change event');
-});
 // This handler provides the initial list of the completion items.
 connection.onCompletion((_textDocumentPosition) => {
     // The pass parameter contains the position of the text document in

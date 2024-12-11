@@ -14,7 +14,8 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
-	InitializeResult
+	InitializeResult,
+	FileChangeType
 } from 'vscode-languageserver/node';
 
 import {
@@ -107,6 +108,16 @@ connection.onDidChangeConfiguration(change => {
 	documents.all().forEach(validateTextDocument);
 });
 
+connection.onDidChangeWatchedFiles(event => {
+	documents.all().forEach(validateTextDocument);
+	event.changes.forEach(change => {
+		// Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
+		if (change.type === FileChangeType.Deleted) {
+			connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
+		}
+	});
+});
+
 function getDocumentSettings(resource: string): Thenable<EpilogSettings> {
 	if (!hasConfigurationCapability) {
 		return Promise.resolve(globalSettings);
@@ -142,11 +153,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
-
-connection.onDidChangeWatchedFiles(_change => {
-	// Monitored files have change in VSCode
-	connection.console.log('We received a file change event');
-});
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
