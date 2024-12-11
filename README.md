@@ -56,7 +56,8 @@ No extension settings are currently contributed/implemented.
 
 ## Release Notes
 
-
+### 0.1.3
+- Improved diagnostics updating when files are created and deleted.
 ### 0.1.2
 - Updated to most recent version of epilog.js
     - Adds builtins less and symless.
