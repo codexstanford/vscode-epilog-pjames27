@@ -58,10 +58,12 @@ No extension settings are currently contributed/implemented.
 
 ### 0.1.3
 - Improved diagnostics updating when files are created and deleted.
+- Improved suggested filename generation for the Consolidate command. No longer suggests a filename that already exists.
+- The Consolidate command now asks user whether they want to overwrite a file that already exists.
 ### 0.1.2
 - Updated to most recent version of epilog.js
     - Adds builtins less and symless.
-- Further improved output formatting for "Epilog: Run Script" command.
+- Further improved output formatting for the Run Script command.
 ### 0.1.1
 - Changed name of "Epilog: Gather" command to "Epilog: Consolidate"
 - Improved "Epilog: Run Script" command.
