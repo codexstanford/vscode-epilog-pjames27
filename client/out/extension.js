@@ -40,10 +40,11 @@ function activate(context) {
             { scheme: 'file', language: language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID },
             { scheme: 'file', language: language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID },
             { scheme: 'file', language: language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID },
-            { scheme: 'file', language: language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID }
+            { scheme: 'file', language: language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID },
+            { scheme: 'file', language: language_ids_js_1.EPILOG_BUILD_LANGUAGE_ID }
         ],
         synchronize: {
-            fileEvents: vscode_1.workspace.createFileSystemWatcher('**/*.{hdf,hrf,metadata,epilogscript}'),
+            fileEvents: vscode_1.workspace.createFileSystemWatcher('**/*.{hdf,hrf,metadata,epilogscript,epilogbuild}'),
         },
         outputChannel: vscode.window.createOutputChannel('Epilog Language Server')
     };

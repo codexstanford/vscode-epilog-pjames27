@@ -60,8 +60,19 @@
           ".epilogscript"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "epilog-build",
+        "aliases": [
+          "Epilog Build",
+          "epilog build"
+        ],
+        "extensions": [
+          ".epilogbuild"
+        ],
+        "configuration": "./language-configuration.json"
       }
-    ],
+  ],
     "grammars": [
       {
         "language": "epilog-dataset",

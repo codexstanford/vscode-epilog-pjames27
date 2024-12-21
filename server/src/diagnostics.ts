@@ -21,11 +21,12 @@ import {
     EPILOG_RULESET_LANGUAGE_ID,
     EPILOG_DATASET_LANGUAGE_ID,
     EPILOG_METADATA_LANGUAGE_ID,
-    EPILOG_SCRIPT_LANGUAGE_ID
+    EPILOG_SCRIPT_LANGUAGE_ID,
+    EPILOG_BUILD_LANGUAGE_ID
 } from '../../common/out/language_ids.js';
 
 import { validateDocWithFiletype_EpilogScript } from './diagnostics/validate_epilogscript';
-
+import { validateDocWithFiletype_EpilogBuild } from './diagnostics/validate_epilogbuild';
 
 type FrontMatterFieldsToValues = Map<string, string[]>;
 
@@ -47,6 +48,9 @@ const languageIdToRelevantFields = new Map<string, {required: string[], optional
         {required: [], optional: ['metadata']}
     ],
     [EPILOG_SCRIPT_LANGUAGE_ID, 
+        {required: [], optional: []}
+    ],
+    [EPILOG_BUILD_LANGUAGE_ID, 
         {required: [], optional: []}
     ]
 ]);
@@ -71,6 +75,9 @@ export function getDiagnostics(
     switch (textDocument.languageId) {
         case EPILOG_SCRIPT_LANGUAGE_ID:
             filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogScript(textDocument, docText);
+            break;
+        case EPILOG_BUILD_LANGUAGE_ID:
+            filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogBuild(textDocument, docText);
             break;
         default:
             break;

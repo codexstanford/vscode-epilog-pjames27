@@ -8,6 +8,7 @@ const vscode_uri_1 = require("vscode-uri");
 const frontmatter_js_1 = require("../../common/out/frontmatter.js");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
 const validate_epilogscript_1 = require("./diagnostics/validate_epilogscript");
+const validate_epilogbuild_1 = require("./diagnostics/validate_epilogbuild");
 const frontmatterFieldNamesToFileExtensions = new Map([
     ['metadata', '.metadata'],
     ['rules', '.hrf'],
@@ -26,6 +27,9 @@ const languageIdToRelevantFields = new Map([
     ],
     [language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID,
         { required: [], optional: [] }
+    ],
+    [language_ids_js_1.EPILOG_BUILD_LANGUAGE_ID,
+        { required: [], optional: [] }
     ]
 ]);
 // Get all the diagnostics for file with an epilog-relevant language id
@@ -43,6 +47,9 @@ function getDiagnostics(textDocument) {
     switch (textDocument.languageId) {
         case language_ids_js_1.EPILOG_SCRIPT_LANGUAGE_ID:
             filetypeSpecificDiagnostics = (0, validate_epilogscript_1.validateDocWithFiletype_EpilogScript)(textDocument, docText);
+            break;
+        case language_ids_js_1.EPILOG_BUILD_LANGUAGE_ID:
+            filetypeSpecificDiagnostics = (0, validate_epilogbuild_1.validateDocWithFiletype_EpilogBuild)(textDocument, docText);
             break;
         default:
             break;
