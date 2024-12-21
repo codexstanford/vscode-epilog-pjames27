@@ -15,9 +15,6 @@ const frontmatterFieldNamesToFileExtensions = new Map([
 ]);
 // Maps a language id to the set of YAML frontmatter fields that are relevant for files with that language id
 const languageIdToRelevantFields = new Map([
-    [language_ids_js_1.EPILOG_LANGUAGE_ID,
-        { required: [], optional: ['metadata'] }
-    ],
     [language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID,
         { required: [], optional: ['metadata', 'rules'] }
     ],

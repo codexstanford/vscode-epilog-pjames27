@@ -12,10 +12,6 @@ A Language Server extension which provides language support for Epilog, the logi
 ### File types
 - A .hdf file should only contain a dataset.
 - A .hrf file should only contain a ruleset.
-- A .epilog file can contain both rulesets and datasets. Each must be wrapped in curly braces and have the corresponding prefix, as in the following screenshot. This must be done even if only one dataset or ruleset is present in the file.
-
-![.epilog Formatting Example](/documentation_images/epilog%20formatting%20example.png)
-
 - A .epilogscript file should contain the three lines below, in any order. The query can be executed on the specified ruleset and dataset(s) by running the "Epilog: Run Script" command from the .epilogscript file. The results will be printed to the "Epilog Language Server" output channel.
     - dataset: <filepath> (to a single file or to a folder containing one or more .hdf files)
     - ruleset: <filepath> (to a single file)
@@ -56,6 +52,8 @@ No extension settings are currently contributed/implemented.
 
 ## Release Notes
 
+### 0.1.4
+- Removed support for .epilog files.
 ### 0.1.3
 - Improved diagnostics updating when files are created and deleted.
 - Improved suggested filename generation for the Consolidate command. No longer suggests a filename that already exists.

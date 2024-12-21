@@ -18,17 +18,6 @@
   "contributes": {
     "languages": [
       {
-        "id": "epilog",
-        "aliases": [
-          "Epilog",
-          "epilog"
-        ],
-        "extensions": [
-          ".epilog"
-        ],
-        "configuration": "./language-configuration.json"
-      },
-      {
         "id": "epilog-dataset",
         "aliases": [
           "Epilog Dataset",
@@ -74,11 +63,6 @@
       }
     ],
     "grammars": [
-      {
-        "language": "epilog",
-        "scopeName": "source.epilog",
-        "path": "./syntaxes/epilog.tmLanguage.json"
-      },
       {
         "language": "epilog-dataset",
         "scopeName": "source.epilog-dataset",

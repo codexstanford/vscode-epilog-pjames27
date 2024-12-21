@@ -17,7 +17,7 @@ import {
 
 import { epilogCmd_runScript } from './commands/epilog_runScript';
 import { epilogCmd_consolidate } from './commands/epilog_consolidate';
-import { EPILOG_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID } from '../../common/out/language_ids.js';
+import { EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID } from '../../common/out/language_ids.js';
 
 let client: LanguageClient;
 
@@ -50,7 +50,6 @@ export function activate(context: ExtensionContext) {
 	const clientOptions: LanguageClientOptions = {
 		// Register the server for epilog documents
 		documentSelector: [
-			{ scheme: 'file', language: EPILOG_LANGUAGE_ID },
 			{ scheme: 'file', language: EPILOG_RULESET_LANGUAGE_ID },
 			{ scheme: 'file', language: EPILOG_DATASET_LANGUAGE_ID },
 			{ scheme: 'file', language: EPILOG_METADATA_LANGUAGE_ID },

@@ -37,7 +37,6 @@ function activate(context) {
     const clientOptions = {
         // Register the server for epilog documents
         documentSelector: [
-            { scheme: 'file', language: language_ids_js_1.EPILOG_LANGUAGE_ID },
             { scheme: 'file', language: language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID },
             { scheme: 'file', language: language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID },
             { scheme: 'file', language: language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID },
