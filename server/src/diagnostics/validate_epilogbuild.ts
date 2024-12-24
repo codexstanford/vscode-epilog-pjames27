@@ -20,23 +20,29 @@ import { LANGUAGE_ID_TO_FILE_EXTENSION, EPILOG_DATASET_LANGUAGE_ID, EPILOG_RULES
 // - Errors if a file to build line is not in the correct format
 // - Errors if the filename of the file to build does not exist
 // - Errors if the filename of the file to build does not have a valid extension
+// - Errors if the same file to build is specified multiple times
 // - Errors if no new filename is specified after '==>'
 // - Warnings if the new filename does not have a valid extension
 // - Warnings if the new filename does not have the same extension as the old filename
 // - Warnings if the new filename already exists
+// - Errors if the same new filename is specified multiple times
 export function validateDocWithFiletype_EpilogBuild(
     textDocument: TextDocument,
     docText: string,
 ): Diagnostic[] {
     let diagnostics: Diagnostic[] = [];
 
+    let prefixValue = '';
+    let prefixValueIncorrectlySpecified = false;
+    
     // Break the document into lines
     const allLines = docText.split('\n');
-
+    
     // Get indices for lines specifying a filename and a new filename
     let filesToBuildLineIndices: number[] = [];
     let prefixLineIndices: number[] = [];
     let overwriteLineIndices: number[] = [];
+
     for (let i = 0; i < allLines.length; i++) {
         // Ignore empty lines
         if (allLines[i].trim() === '') {
@@ -56,6 +62,7 @@ export function validateDocWithFiletype_EpilogBuild(
 
     // There can be at most one prefix line
     if (prefixLineIndices.length > 1) {
+        prefixValueIncorrectlySpecified = true;
         diagnostics.push({
             severity: DiagnosticSeverity.Error,
             range: {
@@ -94,8 +101,9 @@ export function validateDocWithFiletype_EpilogBuild(
 
     // Check that the prefix isn't empty
     if (prefixLineIndices.length === 1) {
-        const prefixValue = allLines[prefixLineIndices[0]].split(':')[1].trim();
+        prefixValue = allLines[prefixLineIndices[0]].split(':')[1].trim();
         if (prefixValue === '') {
+            prefixValueIncorrectlySpecified = true;
             diagnostics.push({
                 severity: DiagnosticSeverity.Error,
                 range: {
@@ -127,11 +135,20 @@ export function validateDocWithFiletype_EpilogBuild(
     // Get the absolute paths to the files
     const documentDir = path.dirname(URI.parse(textDocument.uri).fsPath);
 
-    // Check that all files to build exist and have valid extensions
     let validExtensions = new Set([LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_DATASET_LANGUAGE_ID) ?? '', 
         LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_RULESET_LANGUAGE_ID) ?? '', 
         LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_METADATA_LANGUAGE_ID) ?? '']);
-
+        
+        let fileToBuildPaths: Set<string> = new Set();
+        let newFilePaths: Set<string> = new Set();
+        
+    // Validate the file to build lines. Check that 
+        // all files to build exist and have valid extensions
+        // all files to build are specified only once
+        // all new filenames are specified only once
+        // all new filenames have valid extensions
+        // all new filenames have the same extension as the old filename
+        // all new filenames don't already exist
     for (const fileToBuildLineIndex of filesToBuildLineIndices) {
         const filenames = allLines[fileToBuildLineIndex].trim().split('==>');
 
@@ -180,10 +197,29 @@ export function validateDocWithFiletype_EpilogBuild(
             });
         }
 
+        // Check that the file to build isn't the same as another file to build
+        if (fileToBuildPaths.has(fileToBuildAbsPath)) {
+            diagnostics.push({
+                severity: DiagnosticSeverity.Error,
+                range: {
+                    start: {line: fileToBuildLineIndex, character: filenameToBuildStartIndex},
+                    end: {line: fileToBuildLineIndex, character: filenameToBuildEndIndex}
+                },
+                message: 'Same file to build specified multiple times - will be consolidated multiple times.',
+                source: 'epilog'
+            });
+        } else {
+            // Add the file to build path to the list
+            fileToBuildPaths.add(fileToBuildAbsPath);
+        }
+
         // Verify the name of the file to be created
         if (filenames.length === 2) {
             let newFilename = filenames[1].trim();
-            let newFilenameAbsPath = path.join(documentDir, newFilename);
+            if (prefixValueIncorrectlySpecified) {
+                prefixValue = '';
+            }
+            let newFilenameAbsPath = path.join(documentDir, prefixValue + newFilename);
 
             let newFilenameStartIndex = allLines[fileToBuildLineIndex].indexOf(newFilename, filenameToBuildEndIndex);
             let newFilenameEndIndex = newFilenameStartIndex + newFilename.length;
@@ -223,7 +259,7 @@ export function validateDocWithFiletype_EpilogBuild(
                         start: {line: fileToBuildLineIndex, character: newFilenameStartIndex},
                         end: {line: fileToBuildLineIndex, character: newFilenameEndIndex}
                     },
-                    message: 'New filename should have extension ' + fileToBuildAbsPathExt + ' the same extension as the file to build',
+                    message: 'New filename should have extension ' + fileToBuildAbsPathExt + ' - the same extension as the file to build',
                     source: 'epilog'
                 });
             }
@@ -239,6 +275,22 @@ export function validateDocWithFiletype_EpilogBuild(
                     source: 'epilog'
                 });
             }   
+
+            // Check that the new filename isn't the same as another new filename
+            if (newFilePaths.has(newFilenameAbsPath)) {
+                diagnostics.push({
+                    severity: DiagnosticSeverity.Error,
+                    range: {
+                        start: {line: fileToBuildLineIndex, character: newFilenameStartIndex},
+                        end: {line: fileToBuildLineIndex, character: newFilenameEndIndex}
+                    },
+                    message: 'Same new filename specified multiple times - will be written to multiple times on consolidate.',
+                    source: 'epilog'
+                });
+            } else {
+                // Add the new filename path to the list
+                newFilePaths.add(newFilenameAbsPath);
+            }
         }
     }
 
