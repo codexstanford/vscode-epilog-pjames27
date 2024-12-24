@@ -2,7 +2,7 @@
   "name": "epilog",
   "displayName": "Epilog",
   "description": "Language Support for Epilog",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "publisher": "prestonj-epilog",
   "repository": {
     "type": "git",
@@ -72,7 +72,7 @@
         ],
         "configuration": "./language-configuration.json"
       }
-  ],
+    ],
     "grammars": [
       {
         "language": "epilog-dataset",
