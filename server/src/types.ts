@@ -1,4 +1,8 @@
 // The example settings
 export interface EpilogSettings {
-	runScriptTrace: boolean;
+	includeUniversalFilesWhenConsolidating: boolean;
+	universalRulesPath: string;
+	universalDataPath: string;
+	universalBerlitzPath: string;
+	universalMetadataPath: string;
 }

@@ -88,7 +88,13 @@ connection.onInitialized(() => {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: EpilogSettings = { runScriptTrace: false };
+const defaultSettings: EpilogSettings = { 
+	includeUniversalFilesWhenConsolidating: true,
+	universalRulesPath: '',
+	universalDataPath: '',
+	universalBerlitzPath: '',
+	universalMetadataPath: ''
+};
 let globalSettings: EpilogSettings = defaultSettings;
 
 // Cache the settings of all open documents
@@ -146,49 +152,11 @@ documents.onDidChangeContent(change => {
 
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-	//const docText = textDocument.getText();
-	//const docSettings = await getDocumentSettings(textDocument.uri);
-
 	const diagnostics = getDiagnostics(textDocument);
 
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-// This handler provides the initial list of the completion items.
-connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		return [
-			{
-				label: 'DATASET',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'RULESET',
-				kind: CompletionItemKind.Text,
-				data: 2
-			}
-		];
-	}
-);
-
-// This handler resolves additional information for the item selected in
-// the completion list.
-connection.onCompletionResolve(
-	(item: CompletionItem): CompletionItem => {
-		if (item.data === 1) {
-			item.detail = 'Precedes an Epilog dataset';
-			item.documentation = '';
-		} else if (item.data === 2) {
-			item.detail = 'Precedes an Epilog ruleset';
-			item.documentation = '';
-		}
-		return item;
-	}
-);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

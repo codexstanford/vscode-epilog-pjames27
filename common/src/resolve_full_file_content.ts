@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
 import {
     getFrontmatter,
@@ -14,10 +15,19 @@ import {
 } from './language_ids';    
 
 
+function universalFilesExist(): boolean {
+    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
+    const universalRulesPath = epilogSettings.get('rules');
+    const universalDataPath = epilogSettings.get('data');
+    const universalBerlitzPath = epilogSettings.get('berlitz');
+    const universalMetadataPath = epilogSettings.get('metadata');
+
+    return fs.existsSync(universalRulesPath) && fs.existsSync(universalDataPath) && fs.existsSync(universalBerlitzPath) && fs.existsSync(universalMetadataPath);
+}
 
 // Resolves the full content of a ruleset, dataset, or metadata file, as determined by the files it links to in its frontmatter
 // Note: Validates that the referenced files exist, but doesn't check their extensions. Leaves that to the Language Server's getDiagnostics.
-export function resolveFullFileContent(absFilePath: string): string {
+export function resolveFullFileContent(absFilePath: string, includeUniversalFiles: boolean = false): string {
     // Verify the file exists
     if (!fs.existsSync(absFilePath)) {
         console.error(`File does not exist: ${absFilePath}`);

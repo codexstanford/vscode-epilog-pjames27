@@ -90,18 +90,50 @@
         "path": "./syntaxes/epilog-metadata.tmLanguage.json"
       }
     ],
-    "configuration": {
+    "configuration": [
+      {
       "type": "object",
-      "title": "Running Scripts",
+      "title": "Universal Rules, Data, etc.",
       "properties": {
-        "epilog.runScript.trace": {
+        "epilog.universal.rules": {
           "scope": "resource",
-          "type": "boolean",
-          "default": false,
-          "description": "Print trace of query execution."
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to rules that are always available."
+        },
+        "epilog.universal.data": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to data that are always available."
+        },
+        "epilog.universal.berlitz": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to berlitz that is always available."
+        },
+        "epilog.universal.metadata": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to metadata that are always available."
         }
       }
     },
+    {
+      "type": "object",
+      "title": "Consolidating Files",
+      "properties": {
+        "epilog.consolidate.includeUniversalFiles": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "If true, will include universal files when consolidating."
+        }
+      }
+    }
+  ],
     "commands": [
       {
         "command": "epilog.runScript",

@@ -9,6 +9,20 @@ import {
 import { resolveFullFileContent } from '../../../common/out/resolve_full_file_content.js';
 
 export function epilogCmd_runScript(client: LanguageClient) {
+    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
+    const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get("includeUniversalFiles");
+    const universalRulesPath = epilogSettings.get('rules');
+    const universalDataPath = epilogSettings.get('data');
+    const universalBerlitzPath = epilogSettings.get('berlitz');
+    const universalMetadataPath = epilogSettings.get('metadata');
+
+    console.log("epilogSettings: " + epilogSettings);
+    console.log("includeUniversalFilesWhenConsolidating: " + includeUniversalFilesWhenConsolidating);
+    console.log("universalRulesPath: " + universalRulesPath);
+    console.log("universalDataPath: " + universalDataPath);
+    console.log("universalBerlitzPath: " + universalBerlitzPath);
+    console.log("universalMetadataPath: " + universalMetadataPath);
+
     // Parse the content of the active text editor
     const editor = vscode.window.activeTextEditor;
     if (editor) {
