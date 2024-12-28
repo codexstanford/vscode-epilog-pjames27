@@ -56,8 +56,12 @@ A Language Server extension which provides language support for Epilog, the logi
 
 ## Extension Settings
 
-No extension settings are currently contributed/implemented.
-
+ - Epilog > Universal
+    - Data: absolute filepath to a .hdf file. Will be included in dataset when running a query.
+    - Rules: absolute filepath to a .hrf file. Will be included in ruleset when running a query.
+    - Metadata: absolute filepath to a .metadata file. Will be included in metadata for validation. (Once metadata validation is implemented.)
+- Epilog > Consolidate
+    - Include Universal Files: boolean. If true, will include the universal files when consolidating.
 ## Known Issues
 
 - Metadata validation is not yet implemented.
@@ -65,6 +69,8 @@ No extension settings are currently contributed/implemented.
 ## Release Notes
 ### 0.2.1
 - Removed leftover completion items for .epilog files, DATASET and RULESET.
+- Implemented settings to specify rules, data, and metadata that should always be included when running a query.
+- Implemented a setting to specify whether to include universal files when consolidating.
 
 ### 0.2.0
 - Implemented .epilogbuild file type.

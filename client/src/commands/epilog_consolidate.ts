@@ -315,6 +315,7 @@ export async function epilogCmd_consolidate(client: LanguageClient) {
         return;
     }
 
+    // Otherwise, consolidate the active document as long as it has a valid extension
     if (!validLangIdsToConsolidate.includes(document.languageId)) {
         vscode.window.showErrorMessage('Cannot consolidate: Active document is not a valid Epilog file. Must have extension: ' + validLangIdsToConsolidate.join(', '));
         return;
