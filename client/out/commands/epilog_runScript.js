@@ -103,7 +103,6 @@ function epilogCmd_runScript(client) {
         }
         // Get the content of the ruleset
         const rulesetFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(rulesetAbsFilepath, true);
-        // console.log("Full file content: \n" + rulesetFileContent);
         const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
         let queryFunction = doTrace ? epilog_js.debugfinds : epilog_js.compfinds;
         let datasetAbsFilepaths = [];

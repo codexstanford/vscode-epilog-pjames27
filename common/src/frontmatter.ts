@@ -84,8 +84,6 @@ export function parseFrontmatter(frontmatter: string): Map<string, string[]> {
 // If recursive == true, then the function will recursively traverse the filepaths linked from the frontmatter fields of the linked files
 export function getAbsFilepathsLinkedFromFrontmatterFields(initialAbsFilePath: string, frontmatterFieldsToTraverse: string[], recursive: boolean = false): Set<string> {
     
-    console.log(`Getting absolute filepaths linked from frontmatter fields ${frontmatterFieldsToTraverse} of ${initialAbsFilePath}`);
-    
     let visitedAbsFilepaths: Set<string> = new Set();
 
     let absFilepathsToVisit: string[] = [initialAbsFilePath];

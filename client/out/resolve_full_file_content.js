@@ -93,7 +93,6 @@ function getUniversalFileContent(fileExtension) {
         path.extname(universalFilePath) !== fileExtension) {
         return "";
     }
-    console.log("Universal file content: " + fs.readFileSync(universalFilePath, 'utf8'));
     return fs.readFileSync(universalFilePath, 'utf8');
 }
 //# sourceMappingURL=resolve_full_file_content.js.map

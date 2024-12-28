@@ -121,7 +121,5 @@ function getUniversalFileContent(fileExtension: string): string {
         return "";
     }
 
-    console.log("Universal file content: " + fs.readFileSync(universalFilePath, 'utf8'));
-
     return fs.readFileSync(universalFilePath, 'utf8');
 }

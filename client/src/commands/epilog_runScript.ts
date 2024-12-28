@@ -111,7 +111,6 @@ export function epilogCmd_runScript(client: LanguageClient) {
         
         // Get the content of the ruleset
         const rulesetFileContent = resolveFullFileContent(rulesetAbsFilepath, true);
-        // console.log("Full file content: \n" + rulesetFileContent);
         
         const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
         
