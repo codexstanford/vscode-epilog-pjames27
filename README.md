@@ -63,6 +63,9 @@ No extension settings are currently contributed/implemented.
 - Metadata validation is not yet implemented.
 
 ## Release Notes
+### 0.2.1
+- Removed leftover completion items for .epilog files, DATASET and RULESET.
+
 ### 0.2.0
 - Implemented .epilogbuild file type.
     - Can specify .hdf, .hrf, and .metadata files to consolidate, and the name of the file to save the consolidated contents to.

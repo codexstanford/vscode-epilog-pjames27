@@ -27,10 +27,6 @@ connection.onInitialize((params) => {
     const result = {
         capabilities: {
             textDocumentSync: node_1.TextDocumentSyncKind.Incremental,
-            // Tell the client that this server supports code completion.
-            completionProvider: {
-                resolveProvider: true
-            }
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -53,21 +49,7 @@ connection.onInitialized(() => {
         });
     }
 });
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-const defaultSettings = { runScriptTrace: false };
-let globalSettings = defaultSettings;
-// Cache the settings of all open documents
-const documentSettings = new Map();
 connection.onDidChangeConfiguration(change => {
-    if (hasConfigurationCapability) {
-        // Reset all cached document settings
-        documentSettings.clear();
-    }
-    else {
-        globalSettings = ((change.settings.epilog || defaultSettings));
-    }
     // Revalidate all open text documents
     documents.all().forEach(validateTextDocument);
 });
@@ -80,66 +62,15 @@ connection.onDidChangeWatchedFiles(event => {
         }
     });
 });
-function getDocumentSettings(resource) {
-    if (!hasConfigurationCapability) {
-        return Promise.resolve(globalSettings);
-    }
-    let result = documentSettings.get(resource);
-    if (!result) {
-        result = connection.workspace.getConfiguration({
-            scopeUri: resource,
-            section: 'languageServerExample'
-        });
-        documentSettings.set(resource, result);
-    }
-    return result;
-}
-// Only keep settings for open documents
-documents.onDidClose(e => {
-    documentSettings.delete(e.document.uri);
-});
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
     validateTextDocument(change.document);
 });
 async function validateTextDocument(textDocument) {
-    //const docText = textDocument.getText();
-    //const docSettings = await getDocumentSettings(textDocument.uri);
     const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument);
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
-// This handler provides the initial list of the completion items.
-connection.onCompletion((_textDocumentPosition) => {
-    // The pass parameter contains the position of the text document in
-    // which code complete got requested. For the example we ignore this
-    // info and always provide the same completion items.
-    return [
-        {
-            label: 'DATASET',
-            kind: node_1.CompletionItemKind.Text,
-            data: 1
-        },
-        {
-            label: 'RULESET',
-            kind: node_1.CompletionItemKind.Text,
-            data: 2
-        }
-    ];
-});
-// This handler resolves additional information for the item selected in
-// the completion list.
-connection.onCompletionResolve((item) => {
-    if (item.data === 1) {
-        item.detail = 'Precedes an Epilog dataset';
-        item.documentation = '';
-    }
-    else if (item.data === 2) {
-        item.detail = 'Precedes an Epilog ruleset';
-        item.documentation = '';
-    }
-    return item;
-});
 // Make the text document manager listen on the connection
 // for open, change and close text document events
 documents.listen(connection);

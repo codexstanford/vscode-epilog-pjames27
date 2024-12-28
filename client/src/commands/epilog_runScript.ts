@@ -6,7 +6,7 @@ import * as epilog_js from '../../../common/out/plain-js/epilog.js';
 import {
     EPILOG_SCRIPT_LANGUAGE_ID
 } from '../../../common/out/language_ids.js';
-import { resolveFullFileContent } from '../../../common/out/resolve_full_file_content.js';
+import { resolveFullFileContent } from '../resolve_full_file_content';
 
 export function epilogCmd_runScript(client: LanguageClient) {
     // Parse the content of the active text editor
@@ -110,8 +110,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
         }
         
         // Get the content of the ruleset
-        const rulesetFileContent = resolveFullFileContent(rulesetAbsFilepath);
-        // console.log("Full file content: \n" + rulesetFileContent);
+        const rulesetFileContent = resolveFullFileContent(rulesetAbsFilepath, true);
         
         const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
         
@@ -141,7 +140,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
         // Run the query on the ruleset and each dataset
         for (const datasetAbsFilepath of datasetAbsFilepaths) {
             // Get the content of the dataset
-            const datasetFileContent = resolveFullFileContent(datasetAbsFilepath);
+            const datasetFileContent = resolveFullFileContent(datasetAbsFilepath, true);
             let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
 
             let currDatasetRelFilepath = datasetAbsFilepath.substring(datasetAbsFilepath.lastIndexOf('\\') + 1);

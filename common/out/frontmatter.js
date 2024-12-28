@@ -79,7 +79,6 @@ exports.parseFrontmatter = parseFrontmatter;
 // Doesn't include the initial file in the returned set
 // If recursive == true, then the function will recursively traverse the filepaths linked from the frontmatter fields of the linked files
 function getAbsFilepathsLinkedFromFrontmatterFields(initialAbsFilePath, frontmatterFieldsToTraverse, recursive = false) {
-    console.log(`Getting absolute filepaths linked from frontmatter fields ${frontmatterFieldsToTraverse} of ${initialAbsFilePath}`);
     let visitedAbsFilepaths = new Set();
     let absFilepathsToVisit = [initialAbsFilePath];
     let absFilepathsLinked = new Set();
