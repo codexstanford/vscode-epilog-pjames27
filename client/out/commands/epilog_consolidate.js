@@ -4,7 +4,7 @@ exports.epilogCmd_consolidate = void 0;
 const vscode = require("vscode");
 const fs = require("fs");
 const path = require("path");
-const resolve_full_file_content_js_1 = require("../../../common/out/resolve_full_file_content.js");
+const resolve_full_file_content_1 = require("../resolve_full_file_content");
 const language_ids_js_1 = require("../../../common/out/language_ids.js");
 const validLangIdsToConsolidate = [language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID, language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID, language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID];
 const validExtensions = new Set([
@@ -180,7 +180,7 @@ async function consolidate_EpilogBuild() {
     // For each pair, resolve the full file content of the filename to build, and save the full file content to the new filename
     for (const [absFilenameToBuild, absNewFilename] of filenamesToBuildAndNewFilenames) {
         // Resolve the full file content of the filename to build
-        let fullFileContent = (0, resolve_full_file_content_js_1.resolveFullFileContent)(absFilenameToBuild);
+        let fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(absFilenameToBuild);
         const newFileAlreadyExists = fs.existsSync(absNewFilename);
         // If the new file doesn't already exist, or overwrite has been explicitly specified as true, can freely save the full file content to the new filename
         if (!newFileAlreadyExists ||
@@ -229,7 +229,7 @@ async function consolidate_ActiveDocument() {
         }
     }
     // Resolve the full file content of the active document
-    let fullFileContent = (0, resolve_full_file_content_js_1.resolveFullFileContent)(documentAbsFilepath);
+    let fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(documentAbsFilepath);
     // Save the full file content to the filename specified by the user
     fs.writeFileSync(documentDir + '/' + filename, fullFileContent);
 }

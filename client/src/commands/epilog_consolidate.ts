@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { LanguageClient } from 'vscode-languageclient/node';
-import { resolveFullFileContent } from '../../../common/out/resolve_full_file_content.js';
+import { resolveFullFileContent } from '../resolve_full_file_content';
 import { EPILOG_BUILD_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, LANGUAGE_ID_TO_FILE_EXTENSION } from '../../../common/out/language_ids.js';
 
 const validLangIdsToConsolidate = [EPILOG_DATASET_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID];

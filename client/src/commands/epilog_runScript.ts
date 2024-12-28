@@ -6,7 +6,7 @@ import * as epilog_js from '../../../common/out/plain-js/epilog.js';
 import {
     EPILOG_SCRIPT_LANGUAGE_ID
 } from '../../../common/out/language_ids.js';
-import { resolveFullFileContent } from '../../../common/out/resolve_full_file_content.js';
+import { resolveFullFileContent } from '../resolve_full_file_content';
 
 export function epilogCmd_runScript(client: LanguageClient) {
     const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
