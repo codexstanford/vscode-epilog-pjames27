@@ -107,12 +107,6 @@
           "default": "",
           "description": "Absolute path to data that are always available."
         },
-        "epilog.universal.berlitz": {
-          "scope": "resource",
-          "type": "string",
-          "default": "",
-          "description": "Absolute path to berlitz that is always available."
-        },
         "epilog.universal.metadata": {
           "scope": "resource",
           "type": "string",

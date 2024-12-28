@@ -209,12 +209,15 @@ async function consolidate_EpilogBuild() {
 
     }
 
+    // Get whether the universal files should be included when consolidating
+    const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles') as boolean;
+
 
     // For each pair, resolve the full file content of the filename to build, and save the full file content to the new filename
     for (const [absFilenameToBuild, absNewFilename] of filenamesToBuildAndNewFilenames) {
 
         // Resolve the full file content of the filename to build
-        let fullFileContent = resolveFullFileContent(absFilenameToBuild);
+        let fullFileContent = resolveFullFileContent(absFilenameToBuild, includeUniversalFilesWhenConsolidating);
         
         const newFileAlreadyExists = fs.existsSync(absNewFilename);
 
@@ -288,7 +291,9 @@ async function consolidate_ActiveDocument() {
 
     
     // Resolve the full file content of the active document
-    let fullFileContent = resolveFullFileContent(documentAbsFilepath);
+    // Get whether the universal files should be included when consolidating
+    const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles') as boolean;
+    let fullFileContent = resolveFullFileContent(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
 
     // Save the full file content to the filename specified by the user
     fs.writeFileSync(documentDir + '/' + filename, fullFileContent);

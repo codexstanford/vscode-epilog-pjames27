@@ -6,17 +6,9 @@ const path = require("path");
 const vscode = require("vscode");
 const frontmatter_js_1 = require("../../common/out/frontmatter.js");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
-function universalFilesExist() {
-    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
-    const universalRulesPath = epilogSettings.get('rules');
-    const universalDataPath = epilogSettings.get('data');
-    const universalBerlitzPath = epilogSettings.get('berlitz');
-    const universalMetadataPath = epilogSettings.get('metadata');
-    return fs.existsSync(universalRulesPath) && fs.existsSync(universalDataPath) && fs.existsSync(universalBerlitzPath) && fs.existsSync(universalMetadataPath);
-}
 // Resolves the full content of a ruleset, dataset, or metadata file, as determined by the files it links to in its frontmatter
 // Note: Validates that the referenced files exist, but doesn't check their extensions. Leaves that to the Language Server's getDiagnostics.
-function resolveFullFileContent(absFilePath, includeUniversalFiles = false) {
+function resolveFullFileContent(absFilePath, includeUniversalFiles) {
     // Verify the file exists
     if (!fs.existsSync(absFilePath)) {
         console.error(`File does not exist: ${absFilePath}`);
@@ -63,6 +55,11 @@ function resolveFullFileContent(absFilePath, includeUniversalFiles = false) {
         const postFrontmatterText = resolveGetPostFrontmatterFileContent(fileText).trim();
         fullFileContent += postFrontmatterText + "\n";
     }
+    // Add the universal file content if requested
+    if (includeUniversalFiles) {
+        const universalFileContent = getUniversalFileContent(fileExtension);
+        fullFileContent += universalFileContent;
+    }
     return fullFileContent;
 }
 exports.resolveFullFileContent = resolveFullFileContent;
@@ -72,5 +69,31 @@ function resolveGetPostFrontmatterFileContent(docText) {
     // Get the text after the frontmatter
     const textAfterFrontmatter = docText.slice(frontmatter.length);
     return textAfterFrontmatter;
+}
+function getUniversalFileContent(fileExtension) {
+    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
+    let typeOfFile = "";
+    switch (fileExtension) {
+        case language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID):
+            typeOfFile = "data";
+            break;
+        case language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID):
+            typeOfFile = "rules";
+            break;
+        case language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID):
+            typeOfFile = "metadata";
+            break;
+        default:
+            console.error(`Can't get universal file content for file with extension ${fileExtension}`);
+            return "";
+    }
+    const universalFilePath = epilogSettings.get(typeOfFile);
+    // Verify the file exists and has the correct extension
+    if (!fs.existsSync(universalFilePath) ||
+        path.extname(universalFilePath) !== fileExtension) {
+        return "";
+    }
+    console.log("Universal file content: " + fs.readFileSync(universalFilePath, 'utf8'));
+    return fs.readFileSync(universalFilePath, 'utf8');
 }
 //# sourceMappingURL=resolve_full_file_content.js.map

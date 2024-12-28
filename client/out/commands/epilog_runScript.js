@@ -7,18 +7,6 @@ const epilog_js = require("../../../common/out/plain-js/epilog.js");
 const language_ids_js_1 = require("../../../common/out/language_ids.js");
 const resolve_full_file_content_1 = require("../resolve_full_file_content");
 function epilogCmd_runScript(client) {
-    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
-    const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get("includeUniversalFiles");
-    const universalRulesPath = epilogSettings.get('rules');
-    const universalDataPath = epilogSettings.get('data');
-    const universalBerlitzPath = epilogSettings.get('berlitz');
-    const universalMetadataPath = epilogSettings.get('metadata');
-    console.log("epilogSettings: " + epilogSettings);
-    console.log("includeUniversalFilesWhenConsolidating: " + includeUniversalFilesWhenConsolidating);
-    console.log("universalRulesPath: " + universalRulesPath);
-    console.log("universalDataPath: " + universalDataPath);
-    console.log("universalBerlitzPath: " + universalBerlitzPath);
-    console.log("universalMetadataPath: " + universalMetadataPath);
     // Parse the content of the active text editor
     const editor = vscode.window.activeTextEditor;
     if (editor) {
@@ -114,7 +102,7 @@ function epilogCmd_runScript(client) {
             return;
         }
         // Get the content of the ruleset
-        const rulesetFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(rulesetAbsFilepath);
+        const rulesetFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(rulesetAbsFilepath, true);
         // console.log("Full file content: \n" + rulesetFileContent);
         const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
         let queryFunction = doTrace ? epilog_js.debugfinds : epilog_js.compfinds;
@@ -139,7 +127,7 @@ function epilogCmd_runScript(client) {
         // Run the query on the ruleset and each dataset
         for (const datasetAbsFilepath of datasetAbsFilepaths) {
             // Get the content of the dataset
-            const datasetFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(datasetAbsFilepath);
+            const datasetFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(datasetAbsFilepath, true);
             let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
             let currDatasetRelFilepath = datasetAbsFilepath.substring(datasetAbsFilepath.lastIndexOf('\\') + 1);
             client.outputChannel.appendLine("==== " + currDatasetRelFilepath + " - File Results ====");
