@@ -102,9 +102,9 @@ async function consolidate_EpilogBuild() {
         filenamesToBuildAndNewFilenames.push([filenameToBuild, newFilename]);
     }
     // Get the uri of the active document
-    let documentAbsFilepath = document.uri.fsPath;
+    const documentAbsFilepath = document.uri.fsPath;
     // Get the directory of the active document
-    let documentDir = path.dirname(documentAbsFilepath);
+    const documentDir = path.dirname(documentAbsFilepath);
     // Don't want to normalize and then get the basename, because that will turn an empty prefixvalue into a basename of '.', 
     // and the basename is prepended rather than path.joined
     const prefixBasename = (prefixValue === '' || path.normalize(prefixValue).endsWith('\\')) ? '' : path.basename(path.normalize(prefixValue));
