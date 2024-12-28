@@ -249,15 +249,13 @@ async function consolidate_EpilogBuild() {
 
 async function consolidate_ActiveDocument() {
     // Get the uri of the active document
-    let documentAbsFilepath = vscode.window.activeTextEditor!.document.uri.fsPath;
+    const documentAbsFilepath = vscode.window.activeTextEditor!.document.uri.fsPath;
     
-    // TODO Change to use document instead of client, like epilog_runScript
     // Get the directory of the active document
-    let documentDir = path.dirname(documentAbsFilepath);
-
+    const documentDir = path.dirname(documentAbsFilepath);
 
     // Suggest a filename of the form 'consolidated{num}.{extension}', where extension is the extension of the active document
-    let suggestedFilename = generateFilenameUnusedInList(path.extname(documentAbsFilepath), fs.readdirSync(documentDir), 'consolidated');
+    const suggestedFilename = generateFilenameUnusedInList(path.extname(documentAbsFilepath), fs.readdirSync(documentDir), 'consolidated');
     
     // Ask the user for a filename
     const filename = await vscode.window.showInputBox({
@@ -274,7 +272,7 @@ async function consolidate_ActiveDocument() {
         return;
     }
 
-    let newDocumentFilepath = documentDir + '/' + filename;
+    const newDocumentFilepath = documentDir + '/' + filename;
 
     // If file exists, ask user if they want to overwrite it
     if (fs.existsSync(newDocumentFilepath)) {
@@ -293,7 +291,7 @@ async function consolidate_ActiveDocument() {
     // Resolve the full file content of the active document
     // Get whether the universal files should be included when consolidating
     const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles') as boolean;
-    let fullFileContent = resolveFullFileContent(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
+    const fullFileContent = resolveFullFileContent(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
 
     // Save the full file content to the filename specified by the user
     fs.writeFileSync(documentDir + '/' + filename, fullFileContent);

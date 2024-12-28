@@ -204,12 +204,11 @@ async function consolidate_EpilogBuild() {
 }
 async function consolidate_ActiveDocument() {
     // Get the uri of the active document
-    let documentAbsFilepath = vscode.window.activeTextEditor.document.uri.fsPath;
-    // TODO Change to use document instead of client, like epilog_runScript
+    const documentAbsFilepath = vscode.window.activeTextEditor.document.uri.fsPath;
     // Get the directory of the active document
-    let documentDir = path.dirname(documentAbsFilepath);
+    const documentDir = path.dirname(documentAbsFilepath);
     // Suggest a filename of the form 'consolidated{num}.{extension}', where extension is the extension of the active document
-    let suggestedFilename = generateFilenameUnusedInList(path.extname(documentAbsFilepath), fs.readdirSync(documentDir), 'consolidated');
+    const suggestedFilename = generateFilenameUnusedInList(path.extname(documentAbsFilepath), fs.readdirSync(documentDir), 'consolidated');
     // Ask the user for a filename
     const filename = await vscode.window.showInputBox({
         prompt: 'Enter the filename where the consolidated file contents will be saved.',
@@ -222,7 +221,7 @@ async function consolidate_ActiveDocument() {
         vscode.window.showErrorMessage('No filename specified.');
         return;
     }
-    let newDocumentFilepath = documentDir + '/' + filename;
+    const newDocumentFilepath = documentDir + '/' + filename;
     // If file exists, ask user if they want to overwrite it
     if (fs.existsSync(newDocumentFilepath)) {
         const choice = await vscode.window.showWarningMessage(`File "${newDocumentFilepath}" already exists. Do you want to overwrite it?`, 'Yes', 'No');
@@ -233,7 +232,7 @@ async function consolidate_ActiveDocument() {
     // Resolve the full file content of the active document
     // Get whether the universal files should be included when consolidating
     const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles');
-    let fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
+    const fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
     // Save the full file content to the filename specified by the user
     fs.writeFileSync(documentDir + '/' + filename, fullFileContent);
 }
