@@ -19,11 +19,12 @@ A Language Server extension which provides language support for Epilog, the logi
     - ruleset: <filepath> (to a single file)
     - query: <epilog query>
     - dotrace: <true/false> (optional, defaults to false)
-- A .epilogbuild file should contain the lines below, in any order. Can contain any number of <filename> and <filename> ==> <newfilename> lines. Can contain at most one each of prefix and overwrite lines.
-    - <filename>
-        - Can contain any number of such lines. Will automatically generate a new filename of the form <prefix><filename><num>.<filename's extension> and save the consolidated contents to that file.
-    - <filename> ==> <newfilename>
-        - Can contain any number of such lines. Will save the consolidated contents to the file specified by <newfilename>.
+- A .epilogbuild file should contain the lines below, in any order. Can contain any number of <filepath> and <filepath> ==> <newfilepath> lines. Can contain at most one each of prefix and overwrite lines.
+    - <filepath> ==> <newfilepath>
+        - Can contain any number of such lines. Will save the consolidated contents to the file specified by <directory portion of <newfilepath>, as a relative path><prefix><filename portion of filepath>.
+    - <filepath>
+        - Can contain any number of such lines. Will automatically generate a new filename of the form <non-directory portion of prefix><filename without extension><num>.<filename's extension> and save the consolidated contents to that file.
+            - Will be saved to the directory reached by joining the following: the directory of the .epilogbuild file, the directory portion of the filename, and the directory portion of the prefix.
     - prefix: <string> (optional, defaults to ''. At most one such line.)
         - If specified, the prefix will be prepended to all filenames when generating new filenames.
     - overwrite: <true/false> (optional, defaults to false. At most one such line.)

@@ -77,7 +77,7 @@ export function resolveFullFileContent(absFilePath: string, includeUniversalFile
 
     // Add the universal file content if requested
     if (includeUniversalFiles) {
-        const universalFileContent = getUniversalFileContent(fileExtension);
+        const universalFileContent = getUniversalFileContent(frontmatterFieldToTraverse);
         fullFileContent += universalFileContent;
     }
 
@@ -94,26 +94,26 @@ function resolveGetPostFrontmatterFileContent(docText: string): string {
     return textAfterFrontmatter; 
 }
 
-function getUniversalFileContent(fileExtension: string): string {
+function getUniversalFileContent(frontmatterFieldToTraverse: string): string {
     const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
 
-    let typeOfFile = "";
-    switch (fileExtension) {
-        case LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_DATASET_LANGUAGE_ID):
-            typeOfFile = "data";
+    const universalFilePath = epilogSettings.get(frontmatterFieldToTraverse) as string;
+
+    let fileExtension = "";
+    switch (frontmatterFieldToTraverse) {
+        case 'data':
+            fileExtension = LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_DATASET_LANGUAGE_ID);
             break;
-        case LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_RULESET_LANGUAGE_ID):
-            typeOfFile = "rules";
+        case 'rules':
+            fileExtension = LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_RULESET_LANGUAGE_ID);
             break;
-        case LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_METADATA_LANGUAGE_ID):
-            typeOfFile = "metadata";
+        case 'metadata':
+            fileExtension = LANGUAGE_ID_TO_FILE_EXTENSION.get(EPILOG_METADATA_LANGUAGE_ID);
             break;
         default:
-            console.error(`Can't get universal file content for file with extension ${fileExtension}`);
+            console.error(`Can't get universal file content for frontmatter field ${frontmatterFieldToTraverse}`);
             return "";
     }
-
-    const universalFilePath = epilogSettings.get(typeOfFile) as string;
 
     // Verify the file exists and has the correct extension
     if (!fs.existsSync(universalFilePath) || 

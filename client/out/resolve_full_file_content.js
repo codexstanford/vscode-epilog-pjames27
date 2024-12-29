@@ -57,7 +57,7 @@ function resolveFullFileContent(absFilePath, includeUniversalFiles) {
     }
     // Add the universal file content if requested
     if (includeUniversalFiles) {
-        const universalFileContent = getUniversalFileContent(fileExtension);
+        const universalFileContent = getUniversalFileContent(frontmatterFieldToTraverse);
         fullFileContent += universalFileContent;
     }
     return fullFileContent;
@@ -70,24 +70,24 @@ function resolveGetPostFrontmatterFileContent(docText) {
     const textAfterFrontmatter = docText.slice(frontmatter.length);
     return textAfterFrontmatter;
 }
-function getUniversalFileContent(fileExtension) {
+function getUniversalFileContent(frontmatterFieldToTraverse) {
     const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
-    let typeOfFile = "";
-    switch (fileExtension) {
-        case language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID):
-            typeOfFile = "data";
+    const universalFilePath = epilogSettings.get(frontmatterFieldToTraverse);
+    let fileExtension = "";
+    switch (frontmatterFieldToTraverse) {
+        case 'data':
+            fileExtension = language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID);
             break;
-        case language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID):
-            typeOfFile = "rules";
+        case 'rules':
+            fileExtension = language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID);
             break;
-        case language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID):
-            typeOfFile = "metadata";
+        case 'metadata':
+            fileExtension = language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID);
             break;
         default:
-            console.error(`Can't get universal file content for file with extension ${fileExtension}`);
+            console.error(`Can't get universal file content for frontmatter field ${frontmatterFieldToTraverse}`);
             return "";
     }
-    const universalFilePath = epilogSettings.get(typeOfFile);
     // Verify the file exists and has the correct extension
     if (!fs.existsSync(universalFilePath) ||
         path.extname(universalFilePath) !== fileExtension) {

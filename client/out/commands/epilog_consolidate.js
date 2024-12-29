@@ -30,6 +30,176 @@ function generateFilenameUnusedInList(extension, existingFilenames, prefix = 'ne
     }
     return filename;
 }
+function getDocumentDir(document) {
+    return path.dirname(document.uri.fsPath);
+}
+// Differs from path.dirname in that if the entire prefix value is a path to a directory, the final path segment is included
+function getDirFromPrefix(prefixValue) {
+    if (path.normalize(prefixValue).endsWith('\\')) {
+        return path.normalize(prefixValue);
+    }
+    return path.dirname(path.normalize(prefixValue));
+}
+// Parses the lines of the document to do the following:
+// 1. Get the overwrite value, if specified
+// 2. Get the prefix value, if specified
+// 3. Get the list of pairs of (filename to build, new filename)
+// Only gets the values as specified - doesn't generate new filenames or create absolute paths.
+function parseEpilogBuildFile(document) {
+    const docText = document.getText();
+    // Break the document into lines, filtering out empty lines
+    const lines = docText.split('\n').filter(line => line.trim() !== '');
+    let overwriteValue = true;
+    let overwriteValueHasBeenExplicitlySpecified = false;
+    let prefixValue = '';
+    let prefixValueHasBeenExplicitlySpecified = false;
+    // A list of pairs of (filename to build, new filename)
+    let filenamesToBuildAndNewFilenames = [];
+    for (const line of lines) {
+        // Get the overwrite value
+        if (line.startsWith('overwrite:')) {
+            if (overwriteValueHasBeenExplicitlySpecified) {
+                vscode.window.showErrorMessage('Can only specify overwrite value once');
+                return [false, false, '', [], true];
+            }
+            let overwriteValueString = line.split(':')[1].trim().toLowerCase();
+            if (overwriteValueString !== 'true' && overwriteValueString !== 'false') {
+                vscode.window.showErrorMessage('Overwrite value must be either true or false');
+                return [false, false, '', [], true];
+            }
+            overwriteValue = overwriteValueString === 'true';
+            overwriteValueHasBeenExplicitlySpecified = true;
+            continue;
+        }
+        // Get the prefix value
+        if (line.startsWith('prefix:')) {
+            if (prefixValueHasBeenExplicitlySpecified) {
+                vscode.window.showErrorMessage('Can only specify prefix value once');
+                return [false, false, '', [], true];
+            }
+            prefixValue = line.split(':')[1].trim();
+            if (prefixValue === '') {
+                vscode.window.showErrorMessage('Prefix value cannot be empty');
+                return [false, false, '', [], true];
+            }
+            prefixValueHasBeenExplicitlySpecified = true;
+            continue;
+        }
+        // Get the filename to build, and the new filename (if specified)
+        const filenames = line.split('==>');
+        if (filenames.length > 2) {
+            vscode.window.showErrorMessage('Invalid line: ' + line + '\nLine should be of the form <filename> or <filename> ==> <newfilename>');
+            return [false, false, '', [], true];
+        }
+        const filenameToBuild = filenames[0].trim();
+        const newFilename = filenames.length === 2 ? filenames[1].trim() : '';
+        // Check that the file to build has a valid extension
+        if (!validExtensions.has(path.extname(filenameToBuild))) {
+            vscode.window.showErrorMessage('Invalid file extension: \"' + path.extname(filenameToBuild) + '\"\n Can only consolidate files with extensions: ' + Array.from(validExtensions).join(', '));
+            return [false, false, '', [], true];
+        }
+        filenamesToBuildAndNewFilenames.push([filenameToBuild, newFilename]);
+    }
+    return [overwriteValue, overwriteValueHasBeenExplicitlySpecified, prefixValue, filenamesToBuildAndNewFilenames, false];
+}
+// Validates the filenames in the file and converts them to absolute paths
+// Does not generate filenames for build files without explicitly specified new filenames
+// Checks whether:
+// 1. All files to build exist
+// 2. All new filenames are valid, i.e. are files and not directories
+// 3. No file would be built or written to multiple times
+function validateEpilogBuildFilenamesAndConvertToAbsolute(document, filenamesToBuildAndNewFilenames, prefixValue) {
+    // Get the uri of the active document
+    const documentAbsFilepath = document.uri.fsPath;
+    // Get the directory of the active document
+    const documentDir = path.dirname(documentAbsFilepath);
+    // Sets to detect whether the same file will be read from or written to multiple times
+    let absFilenamesToBuild = new Set();
+    let absNewFilenames = new Set();
+    let absFilenamesToBuildAndNewFilenames = [];
+    // Convert the relative paths to absolute paths and check that:
+    // 1. All files to build exist
+    // 2. All new filenames are valid, i.e. are files and not directories
+    // 3. No file would be built or written to multiple times
+    for (const [relFilenameToBuild, relNewFilename] of filenamesToBuildAndNewFilenames) {
+        // --- Handle the filename to build ---
+        // Convert the relative path to an absolute path
+        const absFilenameToBuild = path.join(documentDir, relFilenameToBuild);
+        // Check that the file to build exists
+        if (!fs.existsSync(absFilenameToBuild)) {
+            vscode.window.showErrorMessage('File to build does not exist: ' + absFilenameToBuild);
+            return [[], true];
+        }
+        // Check that the same file won't be built multiple times
+        if (absFilenamesToBuild.has(absFilenameToBuild)) {
+            vscode.window.showErrorMessage('Same file to build specified multiple times: ' + relFilenameToBuild);
+            return [[], true];
+        }
+        absFilenamesToBuild.add(absFilenameToBuild);
+        // --- Handle the new filename ---
+        if (relNewFilename === '') {
+            absFilenamesToBuildAndNewFilenames.push([absFilenameToBuild, '']);
+            continue;
+        }
+        const absNewFilename = path.join(documentDir, path.dirname(relNewFilename), prefixValue + path.basename(relNewFilename));
+        console.log("absNewFilename: " + absNewFilename);
+        // Check that the new filename is a file and not a directory
+        // Can't end in a slash or be an existing directory
+        if ((fs.existsSync(absNewFilename) && fs.statSync(absNewFilename).isDirectory()) ||
+            absNewFilename.endsWith('\\')) {
+            vscode.window.showErrorMessage('New filename cannot be a directory: ' + absNewFilename);
+            return [[], true];
+        }
+        // Check that the same file won't be written to multiple times
+        if (absNewFilenames.has(absNewFilename)) {
+            vscode.window.showErrorMessage('Same file will be written to multiple times: ' + absNewFilename);
+            return [[], true];
+        }
+        // If trying to write to a nonexisting directory, throw an error
+        if (!fs.existsSync(path.dirname(absNewFilename))) {
+            vscode.window.showErrorMessage('Cannot write to nonexisting directory: ' + path.dirname(absNewFilename));
+            return [[], true];
+        }
+        absNewFilenames.add(absNewFilename);
+        // Update the new filename to be the absolute path
+        absFilenamesToBuildAndNewFilenames.push([absFilenameToBuild, absNewFilename]);
+    }
+    return [absFilenamesToBuildAndNewFilenames, false];
+}
+// Generates new filenames for the files without explicitly specified new filenames
+// Returns the updated list of pairs of (filename to build, new filename)
+function generateNeededNewFilenames(document, absFilenamesToBuildAndNewFilenames, relFilenamesToBuildAndNewFilenames, prefixValue) {
+    // Get the absolute paths of the files that are about to be created
+    let absNewFilenames = absFilenamesToBuildAndNewFilenames.filter(pair => pair[1] !== '').map(pair => pair[1]);
+    const documentDir = getDocumentDir(document);
+    const dirOfPrefix = getDirFromPrefix(prefixValue);
+    // Don't want to normalize and then get the basename, because that will turn an empty prefixvalue into a basename of '.', 
+    // and the basename is prepended rather than path.joined
+    const prefixBasename = (prefixValue === '' || path.normalize(prefixValue).endsWith('\\')) ? '' : path.basename(path.normalize(prefixValue));
+    // Should be of the form <prefix><oldfilename><opt. num>.<extension>
+    for (let i = 0; i < absFilenamesToBuildAndNewFilenames.length; i++) {
+        if (absFilenamesToBuildAndNewFilenames[i][1] !== '') {
+            continue;
+        }
+        const absFilenameToBuild = absFilenamesToBuildAndNewFilenames[i][0];
+        const toBuildExt = path.extname(absFilenameToBuild);
+        const toBuildFileBasename = path.basename(absFilenameToBuild, toBuildExt);
+        const toBuildRelPath = relFilenamesToBuildAndNewFilenames[i][0];
+        const toBuildRelDirPath = path.dirname(toBuildRelPath);
+        // For the sake of checking that the same file won't be written to multiple times, we need to know what files are already in the directory that the prefix specifies, relative to the document directory
+        const dirForAutoGeneratedFilename = path.join(documentDir, toBuildRelDirPath, dirOfPrefix);
+        console.log("dirForAutoGeneratedFilename: " + dirForAutoGeneratedFilename);
+        if (!fs.existsSync(dirForAutoGeneratedFilename)) {
+            vscode.window.showErrorMessage('Trying to write to directory that does not exist: ' + dirForAutoGeneratedFilename);
+            return [[], true];
+        }
+        const filenamesInDir = fs.readdirSync(dirForAutoGeneratedFilename);
+        const newFilenamesInDir = absNewFilenames.filter(filename => path.resolve(path.dirname(filename)) === path.resolve(dirForAutoGeneratedFilename)).map(filename => path.basename(filename));
+        absFilenamesToBuildAndNewFilenames[i][1] = path.join(dirForAutoGeneratedFilename, generateFilenameUnusedInList(toBuildExt, filenamesInDir.concat(newFilenamesInDir), prefixBasename + toBuildFileBasename));
+        absNewFilenames.push(absFilenamesToBuildAndNewFilenames[i][1]);
+    }
+    return [absFilenamesToBuildAndNewFilenames, false];
+}
 async function consolidate_EpilogBuild() {
     // Parse the content of the active text editor
     const editor = vscode.window.activeTextEditor;
@@ -42,145 +212,29 @@ async function consolidate_EpilogBuild() {
         vscode.window.showErrorMessage('Must be an Epilog build file. (I.e. have file extension .epilogbuild)');
         return;
     }
-    let overwriteValue = true;
-    let overwriteValueHasBeenExplicitlySpecified = false;
-    let prefixValue = '';
-    let prefixValueHasBeenExplicitlySpecified = false;
-    // A list of pairs of (filename to build, new filename)
-    let filenamesToBuildAndNewFilenames = [];
-    const docText = document.getText();
-    // Break the document into lines, filtering out empty lines
-    const lines = docText.split('\n').filter(line => line.trim() !== '');
-    // Parses the lines to do the following:
-    // 1. Get the overwrite value, if specified
-    // 2. Get the prefix value, if specified
-    // 3. Get the list of pairs of (filename to build, new filename)
-    // Only gets the values as specified - doesn't generate new filenames or create absolute paths.
-    for (const line of lines) {
-        // Get the overwrite value
-        if (line.startsWith('overwrite:')) {
-            if (overwriteValueHasBeenExplicitlySpecified) {
-                vscode.window.showErrorMessage('Can only specify overwrite value once');
-                return;
-            }
-            let overwriteValueString = line.split(':')[1].trim().toLowerCase();
-            if (overwriteValueString !== 'true' && overwriteValueString !== 'false') {
-                vscode.window.showErrorMessage('Overwrite value must be either true or false');
-                return;
-            }
-            overwriteValue = overwriteValueString === 'true';
-            overwriteValueHasBeenExplicitlySpecified = true;
-            continue;
-        }
-        // Get the prefix value
-        if (line.startsWith('prefix:')) {
-            if (prefixValueHasBeenExplicitlySpecified) {
-                vscode.window.showErrorMessage('Can only specify prefix value once');
-                return;
-            }
-            prefixValue = line.split(':')[1].trim();
-            if (prefixValue === '') {
-                vscode.window.showErrorMessage('Prefix value cannot be empty');
-                return;
-            }
-            prefixValueHasBeenExplicitlySpecified = true;
-            continue;
-        }
-        // Get the filename to build, and the new filename (if specified)
-        const filenames = line.split('==>');
-        if (filenames.length > 2) {
-            vscode.window.showErrorMessage('Invalid line: ' + line + '\nLine should be of the form <filename> or <filename> ==> <newfilename>');
-            return;
-        }
-        const filenameToBuild = filenames[0].trim();
-        const newFilename = filenames.length === 2 ? filenames[1].trim() : '';
-        // Check that the file to build has a valid extension
-        if (!validExtensions.has(path.extname(filenameToBuild))) {
-            vscode.window.showErrorMessage('Invalid file extension: \"' + path.extname(filenameToBuild) + '\"\n Can only consolidate files with extensions: ' + Array.from(validExtensions).join(', '));
-            return;
-        }
-        filenamesToBuildAndNewFilenames.push([filenameToBuild, newFilename]);
-    }
-    // Get the uri of the active document
-    const documentAbsFilepath = document.uri.fsPath;
-    // Get the directory of the active document
-    const documentDir = path.dirname(documentAbsFilepath);
-    // Don't want to normalize and then get the basename, because that will turn an empty prefixvalue into a basename of '.', 
-    // and the basename is prepended rather than path.joined
-    const prefixBasename = (prefixValue === '' || path.normalize(prefixValue).endsWith('\\')) ? '' : path.basename(path.normalize(prefixValue));
-    const prefixDir = path.normalize(prefixValue).endsWith('\\') ? path.normalize(prefixValue) : path.dirname(path.normalize(prefixValue));
-    // For the sake of checking that the same file won't be written to multiple times,
-    // we need to know what files are already in the directory that the prefix specifies, relative to the document directory
-    const dirForAutoGeneratedFilenames = path.join(documentDir, prefixDir);
-    // Check that the directory that the prefix specifies exists
-    if (!fs.existsSync(dirForAutoGeneratedFilenames)) {
-        vscode.window.showErrorMessage('Directory that the prefix specifies does not exist: ' + dirForAutoGeneratedFilenames);
+    // --- Parse the Epilog build file ---
+    const [overwriteValue, overwriteValueHasBeenExplicitlySpecified, prefixValue, relFilenamesToBuildAndNewFilenames, PARSE_ERROR] = parseEpilogBuildFile(document);
+    if (PARSE_ERROR) {
         return;
     }
-    const filenamesInDir = fs.readdirSync(dirForAutoGeneratedFilenames);
-    // Sets to detect whether the same file will be read from or written to multiple times
-    let absFilenamesToBuild = new Set();
-    let absNewFilenames = new Set();
-    // Convert the relative paths to absolute paths, generate new filenames as necessary, and check that:
-    // 1. All files to build exist
-    // 2. All new filenames are valid, i.e. are files and not directories
-    // 3. No file would be built or written to multiple times
-    for (let i = 0; i < filenamesToBuildAndNewFilenames.length; i++) {
-        // Handle the filename to build
-        const relFilenameToBuild = filenamesToBuildAndNewFilenames[i][0];
-        // Convert the relative path to an absolute path
-        const absFilenameToBuild = path.join(documentDir, relFilenameToBuild);
-        // Check that the file to build exists
-        if (!fs.existsSync(absFilenameToBuild)) {
-            vscode.window.showErrorMessage('File to build does not exist: ' + absFilenameToBuild);
-            return;
-        }
-        // Check that the same file won't be built multiple times
-        if (absFilenamesToBuild.has(absFilenameToBuild)) {
-            vscode.window.showErrorMessage('Same file to build specified multiple times: ' + relFilenameToBuild);
-            return;
-        }
-        absFilenamesToBuild.add(absFilenameToBuild);
-        // Update the filename to build to be the absolute path
-        filenamesToBuildAndNewFilenames[i][0] = absFilenameToBuild;
-        // Handle the new filename
-        let relNewFilename = '';
-        // If no new filename is specified, generate the new filename
-        // Should be of the form <prefix><oldfilename><opt. num>.<extension>
-        if (filenamesToBuildAndNewFilenames[i][1] === '') {
-            const oldExt = path.extname(relFilenameToBuild);
-            const oldFilename = path.basename(relFilenameToBuild, oldExt);
-            relNewFilename = generateFilenameUnusedInList(oldExt, filenamesInDir.concat(Array.from(absNewFilenames)), prefixBasename + oldFilename);
-        }
-        else {
-            relNewFilename = prefixBasename + filenamesToBuildAndNewFilenames[i][1];
-        }
-        const absNewFilename = path.join(documentDir, prefixDir, relNewFilename);
-        // Check that the new filename is a file and not a directory
-        // Can't end in a slash or be an existing directory
-        if ((fs.existsSync(absNewFilename) && fs.statSync(absNewFilename).isDirectory()) ||
-            absNewFilename.endsWith('\\')) {
-            vscode.window.showErrorMessage('New filename cannot be a directory: ' + absNewFilename);
-            return;
-        }
-        // Check that the same file won't be written to multiple times
-        if (absNewFilenames.has(absNewFilename)) {
-            vscode.window.showErrorMessage('Same file will be written to multiple times: ' + absNewFilename);
-            return;
-        }
-        // If trying to write to a nonexisting directory, throw an error
-        if (!fs.existsSync(path.dirname(absNewFilename))) {
-            vscode.window.showErrorMessage('Cannot write to nonexisting directory: ' + path.dirname(absNewFilename));
-            return;
-        }
-        absNewFilenames.add(absNewFilename);
-        // Update the new filename to be the absolute path
-        filenamesToBuildAndNewFilenames[i][1] = absNewFilename;
+    // --- Validate the filenames in the file and convert them to absolute paths ---
+    let [absFilenamesToBuildAndNewFilenames, VALIDATION_ERROR] = validateEpilogBuildFilenamesAndConvertToAbsolute(document, relFilenamesToBuildAndNewFilenames, prefixValue);
+    if (VALIDATION_ERROR) {
+        return;
     }
+    // --- Generate new filenames for the files without explicitly specified new filenames ---
+    let GENERATION_ERROR = false;
+    [absFilenamesToBuildAndNewFilenames, GENERATION_ERROR] = generateNeededNewFilenames(document, absFilenamesToBuildAndNewFilenames, relFilenamesToBuildAndNewFilenames, prefixValue);
+    if (GENERATION_ERROR) {
+        return;
+    }
+    console.log("Abs filenames to build and new filenames:\n" + absFilenamesToBuildAndNewFilenames.map(pair => pair[0] + ' ==> ' + pair[1] + '\n').join(''));
+    return;
+    // --- Save the consolidated content ---
     // Get whether the universal files should be included when consolidating
     const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles');
-    // For each pair, resolve the full file content of the filename to build, and save the full file content to the new filename
-    for (const [absFilenameToBuild, absNewFilename] of filenamesToBuildAndNewFilenames) {
+    // For each pair, resolve the full file content of the filename to build and save the full file content to the new filename
+    for (const [absFilenameToBuild, absNewFilename] of absFilenamesToBuildAndNewFilenames) {
         // Resolve the full file content of the filename to build
         let fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(absFilenameToBuild, includeUniversalFilesWhenConsolidating);
         const newFileAlreadyExists = fs.existsSync(absNewFilename);
