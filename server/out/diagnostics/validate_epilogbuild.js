@@ -198,15 +198,15 @@ function validateDocWithFiletype_EpilogBuild(textDocument, docText) {
         }
         // Verify the name of the file to be created
         if (filenames.length === 2) {
-            let newFilename = filenames[1].trim();
+            const newFilenameRelPath = filenames[1].trim();
             if (prefixValueIncorrectlySpecified) {
                 prefixValue = '';
             }
-            let newFilenameAbsPath = path.join(documentDir, prefixValue + newFilename);
-            let newFilenameStartIndex = allLines[fileToBuildLineIndex].indexOf(newFilename, filenameToBuildEndIndex);
-            let newFilenameEndIndex = newFilenameStartIndex + newFilename.length;
+            const newFilenameAbsPath = path.join(documentDir, path.dirname(newFilenameRelPath), prefixValue + path.basename(newFilenameRelPath));
+            const newFilenameStartIndex = allLines[fileToBuildLineIndex].indexOf(newFilenameRelPath, filenameToBuildEndIndex);
+            const newFilenameEndIndex = newFilenameStartIndex + newFilenameRelPath.length;
             // Check that the new filename isn't empty
-            if (newFilename === '') {
+            if (newFilenameRelPath === '') {
                 diagnostics.push({
                     severity: vscode_languageserver_1.DiagnosticSeverity.Error,
                     range: {
@@ -272,8 +272,30 @@ function validateDocWithFiletype_EpilogBuild(textDocument, docText) {
                 newFilePaths.add(newFilenameAbsPath);
             }
         }
+        if (filenames.length === 1) {
+            const filenameToBuildRelPath = path.dirname(filenames[0].trim());
+            const dirOfGeneratedFile = path.join(documentDir, filenameToBuildRelPath, getDirFromPrefix(prefixValue));
+            if (!fs.existsSync(dirOfGeneratedFile)) {
+                diagnostics.push({
+                    severity: vscode_languageserver_1.DiagnosticSeverity.Error,
+                    range: {
+                        start: { line: fileToBuildLineIndex, character: 0 },
+                        end: { line: fileToBuildLineIndex, character: Number.MAX_VALUE }
+                    },
+                    message: 'Will try to write to directory that does not exist: ' + dirOfGeneratedFile,
+                    source: 'epilog'
+                });
+            }
+        }
     }
     return diagnostics;
 }
 exports.validateDocWithFiletype_EpilogBuild = validateDocWithFiletype_EpilogBuild;
+// Differs from path.dirname in that if the entire prefix value is a path to a directory, the final path segment is included
+function getDirFromPrefix(prefixValue) {
+    if (path.normalize(prefixValue).endsWith('\\')) {
+        return path.normalize(prefixValue);
+    }
+    return path.dirname(path.normalize(prefixValue));
+}
 //# sourceMappingURL=validate_epilogbuild.js.map
