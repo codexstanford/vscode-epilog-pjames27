@@ -9,7 +9,7 @@ A Language Server extension which provides language support for Epilog, the logi
 - Provides a "Consolidate" command which can be run to gather and save content from referenced files into a single file.
 
 ## Usage Notes
-
+See the "File types" section below.
 
 ### File types
 - A .hdf file should only contain a dataset.
