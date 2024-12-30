@@ -117,20 +117,27 @@ export function validateDocWithFiletype_EpilogBuild(
     }
 
     // Check that overwrite is a boolean
+    let overwriteValue = false;
+    let overwriteValueExplicitlySpecified = false;
     for (const overwriteLineIndex of overwriteLineIndices) {
-        const overwriteValue = allLines[overwriteLineIndex].split(':')[1].trim().toLowerCase();
-        if (overwriteValue !== 'true' && overwriteValue !== 'false') {
+        const overwriteValueString = allLines[overwriteLineIndex].split(':')[1].trim().toLowerCase();
+        if (overwriteValueString !== 'true' && overwriteValueString !== 'false') {
             diagnostics.push({
                 severity: DiagnosticSeverity.Error,
                 range: {
-                    start: {line: overwriteLineIndex, character: allLines[overwriteLineIndex].indexOf(overwriteValue)},
+                    start: {line: overwriteLineIndex, character: allLines[overwriteLineIndex].indexOf(overwriteValueString)},
                     end: {line: overwriteLineIndex, character: Number.MAX_VALUE}
                 },
                 message: 'overwrite must be either true or false',
                 source: 'epilog'
             });
+        } else {
+            overwriteValue = overwriteValueString === 'true';
+            overwriteValueExplicitlySpecified = true;
         }
     }
+
+    const ignoreOverwriteWarning = overwriteValue && overwriteValueExplicitlySpecified && overwriteLineIndices.length === 1;
 
     // Get the absolute paths to the files
     const documentDir = path.dirname(URI.parse(textDocument.uri).fsPath);
@@ -264,7 +271,7 @@ export function validateDocWithFiletype_EpilogBuild(
                 });
             }
             // Check that the new filename doesn't already exist
-            if (fs.existsSync(newFilenameAbsPath)) {
+            if (!ignoreOverwriteWarning && fs.existsSync(newFilenameAbsPath)) {
                 diagnostics.push({
                     severity: DiagnosticSeverity.Warning,
                     range: {

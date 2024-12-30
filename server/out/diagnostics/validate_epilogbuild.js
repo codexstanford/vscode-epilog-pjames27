@@ -107,20 +107,27 @@ function validateDocWithFiletype_EpilogBuild(textDocument, docText) {
         }
     }
     // Check that overwrite is a boolean
+    let overwriteValue = false;
+    let overwriteValueExplicitlySpecified = false;
     for (const overwriteLineIndex of overwriteLineIndices) {
-        const overwriteValue = allLines[overwriteLineIndex].split(':')[1].trim().toLowerCase();
-        if (overwriteValue !== 'true' && overwriteValue !== 'false') {
+        const overwriteValueString = allLines[overwriteLineIndex].split(':')[1].trim().toLowerCase();
+        if (overwriteValueString !== 'true' && overwriteValueString !== 'false') {
             diagnostics.push({
                 severity: vscode_languageserver_1.DiagnosticSeverity.Error,
                 range: {
-                    start: { line: overwriteLineIndex, character: allLines[overwriteLineIndex].indexOf(overwriteValue) },
+                    start: { line: overwriteLineIndex, character: allLines[overwriteLineIndex].indexOf(overwriteValueString) },
                     end: { line: overwriteLineIndex, character: Number.MAX_VALUE }
                 },
                 message: 'overwrite must be either true or false',
                 source: 'epilog'
             });
         }
+        else {
+            overwriteValue = overwriteValueString === 'true';
+            overwriteValueExplicitlySpecified = true;
+        }
     }
+    const ignoreOverwriteWarning = overwriteValue && overwriteValueExplicitlySpecified && overwriteLineIndices.length === 1;
     // Get the absolute paths to the files
     const documentDir = path.dirname(vscode_uri_1.URI.parse(textDocument.uri).fsPath);
     let validExtensions = new Set([language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID) ?? '',
@@ -244,7 +251,7 @@ function validateDocWithFiletype_EpilogBuild(textDocument, docText) {
                 });
             }
             // Check that the new filename doesn't already exist
-            if (fs.existsSync(newFilenameAbsPath)) {
+            if (!ignoreOverwriteWarning && fs.existsSync(newFilenameAbsPath)) {
                 diagnostics.push({
                     severity: vscode_languageserver_1.DiagnosticSeverity.Warning,
                     range: {

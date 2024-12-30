@@ -68,6 +68,9 @@ See the "File types" section below.
 - Metadata validation is not yet implemented.
 
 ## Release Notes
+### 0.2.2
+- In .epilogbuild files, if overwrite is specified as true, no longer generates a warning diagnostic when a file would be overwritten.
+
 ### 0.2.1
 - Removed leftover completion items for .epilog files, DATASET and RULESET.
 - Implemented settings to specify rules, data, and metadata that should always be included when running a query.
