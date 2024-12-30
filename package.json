@@ -2,7 +2,7 @@
   "name": "epilog",
   "displayName": "Epilog",
   "description": "Language Support for Epilog",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "prestonj-epilog",
   "repository": {
     "type": "git",
