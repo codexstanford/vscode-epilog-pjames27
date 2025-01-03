@@ -71,7 +71,7 @@ See the "File types" section below.
 
 ## Release Notes
 ### 0.2.3
-- Fixed and improved READMe.
+- Fixed and improved README.
 
 ### 0.2.2
 - In .epilogbuild files, if overwrite is specified as true, no longer generates a warning diagnostic when a file would be overwritten.
