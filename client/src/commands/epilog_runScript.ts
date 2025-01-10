@@ -7,6 +7,7 @@ import {
     EPILOG_SCRIPT_LANGUAGE_ID
 } from '../../../common/out/language_ids.js';
 import { resolveFullFileContent } from '../resolve_full_file_content';
+import path = require('path');
 
 export function epilogCmd_runScript(client: LanguageClient) {
     // Check whether there is an active text editor
@@ -92,9 +93,9 @@ export function epilogCmd_runScript(client: LanguageClient) {
     }
 
     // Make the filepaths absolute
-    const documentDir = document.uri.fsPath.substring(0, document.uri.fsPath.lastIndexOf('\\'));
-    let datasetAbsFilepath = documentDir + '\\' + datasetRelFilepath;
-    let rulesetAbsFilepath = documentDir + '\\' + rulesetRelFilepath;
+    const documentDir = path.dirname(document.uri.fsPath);
+    const datasetAbsFilepath = path.join(documentDir, datasetRelFilepath);
+    const rulesetAbsFilepath = path.join(documentDir, rulesetRelFilepath);
 
     // Verify that the dataset file or folder exists
     if (!fs.existsSync(datasetAbsFilepath)) {
@@ -134,7 +135,7 @@ export function epilogCmd_runScript(client: LanguageClient) {
     else {
         const datasetFilePaths = fs.readdirSync(datasetAbsFilepath).filter(file => file.endsWith('.hdf'));
         // Make the filepaths absolute
-        datasetAbsFilepaths = [...datasetAbsFilepaths, ...datasetFilePaths.map(file => datasetAbsFilepath + '\\' + file) ];
+        datasetAbsFilepaths = [...datasetAbsFilepaths, ...datasetFilePaths.map(file => path.join(datasetAbsFilepath, file)) ];
         client.outputChannel.appendLine("====== " + datasetRelFilepath + " - Folder Results ======");
         if (datasetFilePaths.length === 0) {
             client.outputChannel.appendLine("Folder contains no .hdf files.");
@@ -148,8 +149,8 @@ export function epilogCmd_runScript(client: LanguageClient) {
         const datasetFileContent = resolveFullFileContent(datasetAbsFilepath, true);
         let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
 
-        let currDatasetRelFilepath = datasetAbsFilepath.substring(datasetAbsFilepath.lastIndexOf('\\') + 1);
-
+        const currDatasetRelFilepath = path.basename(datasetAbsFilepath);
+        
         client.outputChannel.appendLine("==== " + currDatasetRelFilepath + " - File Results ====");
         
         if (doTrace) {

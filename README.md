@@ -67,8 +67,12 @@ data:
 ## Known Issues
 
 - Metadata validation is not yet implemented.
+- Resolving full file content can fail when referenced files have different line endings (CLRF vs LF)
 
 ## Release Notes
+### 0.2.5
+- Fixed issue where relative paths were computed incorrectly on MacOS.
+
 ### 0.2.3-4
 - Fixed and improved README.
 

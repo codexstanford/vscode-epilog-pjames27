@@ -300,7 +300,7 @@ function validateDocWithFiletype_EpilogBuild(textDocument, docText) {
 exports.validateDocWithFiletype_EpilogBuild = validateDocWithFiletype_EpilogBuild;
 // Differs from path.dirname in that if the entire prefix value is a path to a directory, the final path segment is included
 function getDirFromPrefix(prefixValue) {
-    if (path.normalize(prefixValue).endsWith('\\')) {
+    if (path.normalize(prefixValue).endsWith(path.sep)) {
         return path.normalize(prefixValue);
     }
     return path.dirname(path.normalize(prefixValue));

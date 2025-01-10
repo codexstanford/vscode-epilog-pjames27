@@ -6,6 +6,7 @@ const fs = require("fs");
 const epilog_js = require("../../../common/out/plain-js/epilog.js");
 const language_ids_js_1 = require("../../../common/out/language_ids.js");
 const resolve_full_file_content_1 = require("../resolve_full_file_content");
+const path = require("path");
 function epilogCmd_runScript(client) {
     // Check whether there is an active text editor
     const editor = vscode.window.activeTextEditor;
@@ -87,9 +88,9 @@ function epilogCmd_runScript(client) {
         return;
     }
     // Make the filepaths absolute
-    const documentDir = document.uri.fsPath.substring(0, document.uri.fsPath.lastIndexOf('\\'));
-    let datasetAbsFilepath = documentDir + '\\' + datasetRelFilepath;
-    let rulesetAbsFilepath = documentDir + '\\' + rulesetRelFilepath;
+    const documentDir = path.dirname(document.uri.fsPath);
+    const datasetAbsFilepath = path.join(documentDir, datasetRelFilepath);
+    const rulesetAbsFilepath = path.join(documentDir, rulesetRelFilepath);
     // Verify that the dataset file or folder exists
     if (!fs.existsSync(datasetAbsFilepath)) {
         vscode.window.showErrorMessage('Dataset file or folder does not exist: ' + datasetAbsFilepath);
@@ -120,7 +121,7 @@ function epilogCmd_runScript(client) {
     else {
         const datasetFilePaths = fs.readdirSync(datasetAbsFilepath).filter(file => file.endsWith('.hdf'));
         // Make the filepaths absolute
-        datasetAbsFilepaths = [...datasetAbsFilepaths, ...datasetFilePaths.map(file => datasetAbsFilepath + '\\' + file)];
+        datasetAbsFilepaths = [...datasetAbsFilepaths, ...datasetFilePaths.map(file => path.join(datasetAbsFilepath, file))];
         client.outputChannel.appendLine("====== " + datasetRelFilepath + " - Folder Results ======");
         if (datasetFilePaths.length === 0) {
             client.outputChannel.appendLine("Folder contains no .hdf files.");
@@ -132,7 +133,7 @@ function epilogCmd_runScript(client) {
         // Get the content of the dataset
         const datasetFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(datasetAbsFilepath, true);
         let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
-        let currDatasetRelFilepath = datasetAbsFilepath.substring(datasetAbsFilepath.lastIndexOf('\\') + 1);
+        const currDatasetRelFilepath = path.basename(datasetAbsFilepath);
         client.outputChannel.appendLine("==== " + currDatasetRelFilepath + " - File Results ====");
         if (doTrace) {
             client.outputChannel.appendLine("== Trace Results ==");

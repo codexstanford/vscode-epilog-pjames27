@@ -40,7 +40,8 @@ function getDocumentDir(document: vscode.TextDocument) {
 
 // Differs from path.dirname in that if the entire prefix value is a path to a directory, the final path segment is included
 function getDirFromPrefix(prefixValue: string) {
-    if (path.normalize(prefixValue).endsWith('\\')) {
+    if (path.normalize(prefixValue).endsWith(path.sep)) {
+        console.log("ends in path sep:", prefixValue);
         return path.normalize(prefixValue);
     }
     return path.dirname(path.normalize(prefixValue));
@@ -168,13 +169,19 @@ function validateEpilogBuildFilenamesAndConvertToAbsolute(
             absFilenamesToBuildAndNewFilenames.push([absFilenameToBuild, '']);
             continue;
         }
+
+        // The relative new filename can't be a directory (i.e. end in a path separator)
+        if (path.normalize(relNewFilename).endsWith(path.sep)) {
+            vscode.window.showErrorMessage('New filename cannot be a directory: ' + relNewFilename);
+            return [[], true];
+        }
     
         const absNewFilename = path.join(documentDir, path.dirname(relNewFilename), prefixValue + path.basename(relNewFilename));
 
         // Check that the new filename is a file and not a directory
-            // Can't end in a slash or be an existing directory
+            // Can't end in a path separator or be an existing directory
         if ((fs.existsSync(absNewFilename) && fs.statSync(absNewFilename).isDirectory()) || 
-            absNewFilename.endsWith('\\')) {
+            absNewFilename.endsWith(path.sep)) {
             vscode.window.showErrorMessage('New filename cannot be a directory: ' + absNewFilename);
             return [[], true];
         }
@@ -210,7 +217,7 @@ function generateNeededNewFilenames(document: vscode.TextDocument, absFilenamesT
     const dirOfPrefix = getDirFromPrefix(prefixValue);
     // Don't want to normalize and then get the basename, because that will turn an empty prefixvalue into a basename of '.', 
         // and the basename is prepended rather than path.joined
-    const prefixBasename = (prefixValue === '' || path.normalize(prefixValue).endsWith('\\')) ? '' : path.basename(path.normalize(prefixValue));
+    const prefixBasename = (prefixValue === '' || path.normalize(prefixValue).endsWith(path.sep)) ? '' : path.basename(path.normalize(prefixValue));
 
         // Should be of the form <prefix><oldfilename><opt. num>.<extension>
     for (let i = 0; i < absFilenamesToBuildAndNewFilenames.length; i++) {
