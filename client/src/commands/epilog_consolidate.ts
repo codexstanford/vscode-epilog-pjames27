@@ -5,6 +5,7 @@ import * as path from 'path';
 import { LanguageClient } from 'vscode-languageclient/node';
 import { resolveFullFileContent } from '../resolve_full_file_content';
 import { EPILOG_BUILD_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, LANGUAGE_ID_TO_FILE_EXTENSION } from '../../../common/out/language_ids.js';
+import { writeToDebugChannel } from '../debugChannel';
 
 const validLangIdsToConsolidate = [EPILOG_DATASET_LANGUAGE_ID, EPILOG_RULESET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID];
 const validExtensions = new Set([ 
@@ -290,7 +291,11 @@ async function consolidate_EpilogBuild() {
 
         // Resolve the full file content of the filename to build
         let fullFileContent = resolveFullFileContent(absFilenameToBuild, includeUniversalFilesWhenConsolidating);
-        
+        if (fullFileContent === null) {
+            writeToDebugChannel(`Tried to consolidate file ${absFilenameToBuild}, but could not resolve full file content.`);
+            continue;
+        }
+
         const newFileAlreadyExists = fs.existsSync(absNewFilename);
 
         // If the new file doesn't already exist, or overwrite has been explicitly specified as true, can freely save the full file content to the new filename
@@ -344,7 +349,7 @@ async function consolidate_ActiveDocument() {
         return;
     }
 
-    const newDocumentFilepath = documentDir + '/' + filename;
+    const newDocumentFilepath = path.join(documentDir, filename);
 
     // If file exists, ask user if they want to overwrite it
     if (fs.existsSync(newDocumentFilepath)) {
@@ -364,9 +369,13 @@ async function consolidate_ActiveDocument() {
     // Get whether the universal files should be included when consolidating
     const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles') as boolean;
     const fullFileContent = resolveFullFileContent(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
+    if (fullFileContent === null) {
+        writeToDebugChannel(`Tried to consolidate file ${documentAbsFilepath}, but could not resolve full file content.`);
+        return;
+    }
 
     // Save the full file content to the filename specified by the user
-    fs.writeFileSync(documentDir + '/' + filename, fullFileContent);
+    fs.writeFileSync(newDocumentFilepath, fullFileContent);
 }
 
 export async function epilogCmd_consolidate(client: LanguageClient) {   

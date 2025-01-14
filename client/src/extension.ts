@@ -18,6 +18,7 @@ import {
 import { epilogCmd_runScript } from './commands/epilog_runScript';
 import { epilogCmd_consolidate } from './commands/epilog_consolidate';
 import { EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID, EPILOG_METADATA_LANGUAGE_ID, EPILOG_SCRIPT_LANGUAGE_ID, EPILOG_BUILD_LANGUAGE_ID } from '../../common/out/language_ids.js';
+import { setDebugChannel } from './debugChannel.js';
 
 let client: LanguageClient;
 
@@ -83,6 +84,7 @@ export function activate(context: ExtensionContext) {
 	context.subscriptions.push(disposable2);
 	// Start the client. This will also launch the server
 	client.start();
+	setDebugChannel(vscode.window.createOutputChannel('Epilog Language Server - Debug'));
 	console.log("client started");
 }
 

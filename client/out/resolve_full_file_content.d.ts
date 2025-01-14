@@ -1,1 +1,1 @@
-export declare function resolveFullFileContent(absFilePath: string, includeUniversalFiles: boolean): string;
+export declare function resolveFullFileContent(absFilePath: string, includeUniversalFiles: boolean): string | null;

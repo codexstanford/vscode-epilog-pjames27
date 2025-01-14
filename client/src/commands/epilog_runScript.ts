@@ -8,6 +8,7 @@ import {
 } from '../../../common/out/language_ids.js';
 import { resolveFullFileContent } from '../resolve_full_file_content';
 import path = require('path');
+import { writeToDebugChannel } from '../debugChannel.js';
 
 export function epilogCmd_runScript(client: LanguageClient) {
     // Check whether there is an active text editor
@@ -100,24 +101,30 @@ export function epilogCmd_runScript(client: LanguageClient) {
     // Verify that the dataset file or folder exists
     if (!fs.existsSync(datasetAbsFilepath)) {
         vscode.window.showErrorMessage('Dataset file or folder does not exist: ' + datasetAbsFilepath);
+        writeToDebugChannel(`Tried to run script with nonexistent dataset file or folder: ${datasetAbsFilepath}`);
         return;
     }
 
     // Verify that the ruleset file exists
     if (!fs.existsSync(rulesetAbsFilepath)) {
         vscode.window.showErrorMessage('Ruleset file does not exist: ' + rulesetAbsFilepath);
+        writeToDebugChannel(`Tried to run script with nonexistent ruleset file: ${rulesetAbsFilepath}`);
         return;
     }
 
     // Verify that the query is a valid epilog query
     if (epilog_js.read(query) === "error") {
         vscode.window.showErrorMessage('Query is not a valid epilog query: ' + query);
+        writeToDebugChannel(`Tried to run script with invalid query: ${query}`);
         return;
     }
     
     // Get the content of the ruleset
     const rulesetFileContent = resolveFullFileContent(rulesetAbsFilepath, true);
-    
+    if (rulesetFileContent === null) {
+        writeToDebugChannel(`Could not resolve full file content for ruleset file: ${rulesetAbsFilepath}`);
+        return;
+    }
     const ruleset = epilog_js.definemorerules([], epilog_js.readdata(rulesetFileContent));
     
     let queryFunction = doTrace ? epilog_js.debugfinds : epilog_js.compfinds;
@@ -147,6 +154,10 @@ export function epilogCmd_runScript(client: LanguageClient) {
     for (const datasetAbsFilepath of datasetAbsFilepaths) {
         // Get the content of the dataset
         const datasetFileContent = resolveFullFileContent(datasetAbsFilepath, true);
+        if (datasetFileContent === null) {
+            writeToDebugChannel(`Could not resolve full file content for dataset file: ${datasetAbsFilepath}`);
+            continue;
+        }
         let dataset = epilog_js.definemorefacts([], epilog_js.readdata(datasetFileContent));
 
         const currDatasetRelFilepath = path.basename(datasetAbsFilepath);

@@ -6,21 +6,22 @@ const path = require("path");
 const vscode = require("vscode");
 const frontmatter_js_1 = require("../../common/out/frontmatter.js");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
+const debugChannel_js_1 = require("./debugChannel.js");
 // Resolves the full content of a ruleset, dataset, or metadata file, as determined by the files it links to in its frontmatter
 // Note: Validates that the referenced files exist, but doesn't check their extensions. Leaves that to the Language Server's getDiagnostics.
 function resolveFullFileContent(absFilePath, includeUniversalFiles) {
     // Verify the file exists
     if (!fs.existsSync(absFilePath)) {
-        console.error(`File does not exist: ${absFilePath}`);
-        return "";
+        (0, debugChannel_js_1.writeToDebugChannel)(`Tried to resolve full file content for nonexistent file: ${absFilePath}`);
+        return null;
     }
     // Get the file extension
     const fileExtension = path.extname(absFilePath);
     // Get the file language id from the file extension for the initial file
     const initialFileLanguageId = language_ids_js_1.FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (initialFileLanguageId === undefined) {
-        console.error(`File type ${fileExtension} does not have a valid epilog language id: ${absFilePath}`);
-        return "";
+        (0, debugChannel_js_1.writeToDebugChannel)(`Tried to resolve full file content for file with invalid extension: ${absFilePath}`);
+        return null;
     }
     let frontmatterFieldToTraverse = "";
     switch (initialFileLanguageId) {
@@ -35,21 +36,23 @@ function resolveFullFileContent(absFilePath, includeUniversalFiles) {
             break;
         default:
             console.error(`Can't resolve full file content for files with type ${initialFileLanguageId}: ${absFilePath}`);
-            return "";
+            return null;
     }
     // Get the set of absolute filepaths to visit, starting with the initial file and including all the files it links to, recursively
     let linkedAbsFilepaths = (0, frontmatter_js_1.getAbsFilepathsLinkedFromFrontmatterFields)(absFilePath, [frontmatterFieldToTraverse], true);
     // The initial file will only be in the linkedAbsFilepaths set if there's a cycle. We remove it to avoid adding its content twice.
     // And we remove it here then construct the array, instead of adding the initial file to the set then constructing the array, to ensure the initial file's content is first in the output
     linkedAbsFilepaths.delete(absFilePath);
-    let absFilepathsToVisit = [absFilePath, ...Array.from(linkedAbsFilepaths)];
+    const absFilepathsToVisit = [absFilePath, ...Array.from(linkedAbsFilepaths)];
+    (0, debugChannel_js_1.writeToDebugChannel)(`Resolving full file content for ${absFilePath} with ${absFilepathsToVisit.length} files to visit.`);
     let fullFileContent = "";
     for (const currAbsFilepath of absFilepathsToVisit) {
         // Verify the file exists
         if (!fs.existsSync(currAbsFilepath)) {
-            console.error(`File does not exist: ${currAbsFilepath}`);
-            continue;
+            (0, debugChannel_js_1.writeToDebugChannel)(`Failed to resolve full file content for ${absFilePath} - referenced file does not exist: ${currAbsFilepath}`);
+            return null;
         }
+        (0, debugChannel_js_1.writeToDebugChannel)(`    Visiting file ${currAbsFilepath}`);
         // Get the file content and add to the full file content
         const fileText = fs.readFileSync(currAbsFilepath, 'utf8');
         const postFrontmatterText = resolveGetPostFrontmatterFileContent(fileText).trim();
@@ -60,6 +63,7 @@ function resolveFullFileContent(absFilePath, includeUniversalFiles) {
         const universalFileContent = getUniversalFileContent(frontmatterFieldToTraverse);
         fullFileContent += universalFileContent;
     }
+    (0, debugChannel_js_1.writeToDebugChannel)(`Successfully resolved full file content for ${absFilePath}.`);
     return fullFileContent;
 }
 exports.resolveFullFileContent = resolveFullFileContent;
@@ -71,8 +75,8 @@ function resolveGetPostFrontmatterFileContent(docText) {
     return textAfterFrontmatter;
 }
 function getUniversalFileContent(frontmatterFieldToTraverse) {
-    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
-    const universalFilePath = epilogSettings.get(frontmatterFieldToTraverse);
+    const epilogUniversalSettings = vscode.workspace.getConfiguration('epilog.universal');
+    const universalFilePath = epilogUniversalSettings.get(frontmatterFieldToTraverse);
     let fileExtension = "";
     switch (frontmatterFieldToTraverse) {
         case 'data':
@@ -89,8 +93,12 @@ function getUniversalFileContent(frontmatterFieldToTraverse) {
             return "";
     }
     // Verify the file exists and has the correct extension
-    if (!fs.existsSync(universalFilePath) ||
-        path.extname(universalFilePath) !== fileExtension) {
+    if (!fs.existsSync(universalFilePath)) {
+        (0, debugChannel_js_1.writeToDebugChannel)(`Universal file ${universalFilePath} does not exist.`);
+        return "";
+    }
+    if (path.extname(universalFilePath) !== fileExtension) {
+        (0, debugChannel_js_1.writeToDebugChannel)(`Universal file ${universalFilePath} has the wrong extension - should have extension ${fileExtension}`);
         return "";
     }
     return fs.readFileSync(universalFilePath, 'utf8');

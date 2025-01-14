@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const resolve_full_file_content_1 = require("../resolve_full_file_content");
 const language_ids_js_1 = require("../../../common/out/language_ids.js");
+const debugChannel_1 = require("../debugChannel");
 const validLangIdsToConsolidate = [language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID, language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID, language_ids_js_1.EPILOG_METADATA_LANGUAGE_ID];
 const validExtensions = new Set([
     language_ids_js_1.LANGUAGE_ID_TO_FILE_EXTENSION.get(language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID),
@@ -239,6 +240,10 @@ async function consolidate_EpilogBuild() {
     for (const [absFilenameToBuild, absNewFilename] of absFilenamesToBuildAndNewFilenames) {
         // Resolve the full file content of the filename to build
         let fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(absFilenameToBuild, includeUniversalFilesWhenConsolidating);
+        if (fullFileContent === null) {
+            (0, debugChannel_1.writeToDebugChannel)(`Tried to consolidate file ${absFilenameToBuild}, but could not resolve full file content.`);
+            continue;
+        }
         const newFileAlreadyExists = fs.existsSync(absNewFilename);
         // If the new file doesn't already exist, or overwrite has been explicitly specified as true, can freely save the full file content to the new filename
         if (!newFileAlreadyExists ||
@@ -277,7 +282,7 @@ async function consolidate_ActiveDocument() {
         vscode.window.showErrorMessage('No filename specified.');
         return;
     }
-    const newDocumentFilepath = documentDir + '/' + filename;
+    const newDocumentFilepath = path.join(documentDir, filename);
     // If file exists, ask user if they want to overwrite it
     if (fs.existsSync(newDocumentFilepath)) {
         const choice = await vscode.window.showWarningMessage(`File "${newDocumentFilepath}" already exists. Do you want to overwrite it?`, 'Yes', 'No');
@@ -289,8 +294,12 @@ async function consolidate_ActiveDocument() {
     // Get whether the universal files should be included when consolidating
     const includeUniversalFilesWhenConsolidating = vscode.workspace.getConfiguration('epilog.consolidate').get('includeUniversalFiles');
     const fullFileContent = (0, resolve_full_file_content_1.resolveFullFileContent)(documentAbsFilepath, includeUniversalFilesWhenConsolidating);
+    if (fullFileContent === null) {
+        (0, debugChannel_1.writeToDebugChannel)(`Tried to consolidate file ${documentAbsFilepath}, but could not resolve full file content.`);
+        return;
+    }
     // Save the full file content to the filename specified by the user
-    fs.writeFileSync(documentDir + '/' + filename, fullFileContent);
+    fs.writeFileSync(newDocumentFilepath, fullFileContent);
 }
 async function epilogCmd_consolidate(client) {
     const editor = vscode.window.activeTextEditor;

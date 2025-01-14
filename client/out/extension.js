@@ -13,6 +13,7 @@ const node_1 = require("vscode-languageclient/node");
 const epilog_runScript_1 = require("./commands/epilog_runScript");
 const epilog_consolidate_1 = require("./commands/epilog_consolidate");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
+const debugChannel_js_1 = require("./debugChannel.js");
 let client;
 function activate(context) {
     // The server is implemented in node
@@ -61,6 +62,7 @@ function activate(context) {
     context.subscriptions.push(disposable2);
     // Start the client. This will also launch the server
     client.start();
+    (0, debugChannel_js_1.setDebugChannel)(vscode.window.createOutputChannel('Epilog Language Server - Debug'));
     console.log("client started");
 }
 exports.activate = activate;

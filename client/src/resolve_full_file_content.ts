@@ -14,15 +14,16 @@ import {
     FILE_EXTENSION_TO_LANGUAGE_ID,
     LANGUAGE_ID_TO_FILE_EXTENSION
 } from '../../common/out/language_ids.js';    
+import { writeToDebugChannel } from './debugChannel.js';
 
 
 // Resolves the full content of a ruleset, dataset, or metadata file, as determined by the files it links to in its frontmatter
 // Note: Validates that the referenced files exist, but doesn't check their extensions. Leaves that to the Language Server's getDiagnostics.
-export function resolveFullFileContent(absFilePath: string, includeUniversalFiles: boolean): string {
+export function resolveFullFileContent(absFilePath: string, includeUniversalFiles: boolean): string | null {
     // Verify the file exists
     if (!fs.existsSync(absFilePath)) {
-        console.error(`File does not exist: ${absFilePath}`);
-        return "";
+        writeToDebugChannel(`Tried to resolve full file content for nonexistent file: ${absFilePath}`);
+        return null;
     }
     
     // Get the file extension
@@ -31,8 +32,8 @@ export function resolveFullFileContent(absFilePath: string, includeUniversalFile
     // Get the file language id from the file extension for the initial file
     const initialFileLanguageId = FILE_EXTENSION_TO_LANGUAGE_ID.get(fileExtension);
     if (initialFileLanguageId === undefined) {
-        console.error(`File type ${fileExtension} does not have a valid epilog language id: ${absFilePath}`);
-        return "";
+        writeToDebugChannel(`Tried to resolve full file content for file with invalid extension: ${absFilePath}`);
+        return null;
     }
 
 
@@ -49,7 +50,7 @@ export function resolveFullFileContent(absFilePath: string, includeUniversalFile
             break;
         default:
             console.error(`Can't resolve full file content for files with type ${initialFileLanguageId}: ${absFilePath}`);
-            return "";
+            return null;
     }
 
     // Get the set of absolute filepaths to visit, starting with the initial file and including all the files it links to, recursively
@@ -57,16 +58,20 @@ export function resolveFullFileContent(absFilePath: string, includeUniversalFile
     // The initial file will only be in the linkedAbsFilepaths set if there's a cycle. We remove it to avoid adding its content twice.
     // And we remove it here then construct the array, instead of adding the initial file to the set then constructing the array, to ensure the initial file's content is first in the output
     linkedAbsFilepaths.delete(absFilePath); 
-    let absFilepathsToVisit: string[] = [absFilePath, ...Array.from(linkedAbsFilepaths)];
+    const absFilepathsToVisit: string[] = [absFilePath, ...Array.from(linkedAbsFilepaths)];
+
+    writeToDebugChannel(`Resolving full file content for ${absFilePath} with ${absFilepathsToVisit.length} files to visit.`);
 
     let fullFileContent = "";
 
     for (const currAbsFilepath of absFilepathsToVisit) {
         // Verify the file exists
         if (!fs.existsSync(currAbsFilepath)) {
-            console.error(`File does not exist: ${currAbsFilepath}`);
-            continue;
+            writeToDebugChannel(`Failed to resolve full file content for ${absFilePath} - referenced file does not exist: ${currAbsFilepath}`);
+            return null;
         }
+
+        writeToDebugChannel(`    Visiting file ${currAbsFilepath}`);
 
         // Get the file content and add to the full file content
         const fileText = fs.readFileSync(currAbsFilepath, 'utf8');
@@ -80,6 +85,8 @@ export function resolveFullFileContent(absFilePath: string, includeUniversalFile
         const universalFileContent = getUniversalFileContent(frontmatterFieldToTraverse);
         fullFileContent += universalFileContent;
     }
+
+    writeToDebugChannel(`Successfully resolved full file content for ${absFilePath}.`);
 
     return fullFileContent;
 }
@@ -95,9 +102,9 @@ function resolveGetPostFrontmatterFileContent(docText: string): string {
 }
 
 function getUniversalFileContent(frontmatterFieldToTraverse: string): string {
-    const epilogSettings = vscode.workspace.getConfiguration('epilog.universal');
+    const epilogUniversalSettings = vscode.workspace.getConfiguration('epilog.universal');
 
-    const universalFilePath = epilogSettings.get(frontmatterFieldToTraverse) as string;
+    const universalFilePath = epilogUniversalSettings.get(frontmatterFieldToTraverse) as string;
 
     let fileExtension = "";
     switch (frontmatterFieldToTraverse) {
@@ -116,8 +123,12 @@ function getUniversalFileContent(frontmatterFieldToTraverse: string): string {
     }
 
     // Verify the file exists and has the correct extension
-    if (!fs.existsSync(universalFilePath) || 
-        path.extname(universalFilePath) !== fileExtension) {
+    if (!fs.existsSync(universalFilePath)) {
+        writeToDebugChannel(`Universal file ${universalFilePath} does not exist.`);
+        return "";
+    } 
+    if (path.extname(universalFilePath) !== fileExtension) {
+        writeToDebugChannel(`Universal file ${universalFilePath} has the wrong extension - should have extension ${fileExtension}`);
         return "";
     }
 

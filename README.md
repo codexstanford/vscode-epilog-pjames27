@@ -70,6 +70,10 @@ data:
 - Resolving full file content can fail when referenced files have different line endings (CLRF vs LF)
 
 ## Release Notes
+### 0.2.6
+- Added output channel "Epilog Language Server - Debug" for logging information to assist with debugging epilog and the extension itself.
+- Fixed another instance where paths were computed incorrectly on MacOS.
+
 ### 0.2.5
 - Fixed issue where relative paths were computed incorrectly on MacOS.
 
