@@ -70,6 +70,9 @@ data:
 - Resolving full file content can fail when referenced files have different line endings (CLRF vs LF)
 
 ## Release Notes
+### 0.2.7
+- Added a summary of results when the Run Script command is executed on a folder of datasets.
+
 ### 0.2.6
 - Added output channel "Epilog Language Server - Debug" for logging information to assist with debugging epilog and the extension itself.
 - Fixed another instance where paths were computed incorrectly on MacOS.

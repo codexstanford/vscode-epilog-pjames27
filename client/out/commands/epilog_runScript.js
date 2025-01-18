@@ -121,12 +121,14 @@ function epilogCmd_runScript(client) {
     let datasetAbsFilepaths = [];
     // -- Run the query on the dataset(s) --
     client.outputChannel.appendLine("========== " + query + " - Running Query ==========");
+    let runningQueryOnDirectory = false;
     // If the dataset path is not a folder, we will run the query on the content of the dataset file
     if (!fs.lstatSync(datasetAbsFilepath).isDirectory()) {
         datasetAbsFilepaths.push(datasetAbsFilepath);
     }
     // Otherwise, we will run it on each of the .hdf files in the folder
     else {
+        runningQueryOnDirectory = true;
         const datasetFilePaths = fs.readdirSync(datasetAbsFilepath).filter(file => file.endsWith('.hdf'));
         // Make the filepaths absolute
         datasetAbsFilepaths = [...datasetAbsFilepaths, ...datasetFilePaths.map(file => path.join(datasetAbsFilepath, file))];
@@ -136,6 +138,8 @@ function epilogCmd_runScript(client) {
             return;
         }
     }
+    let numResults = 0;
+    let numFilesWithResults = 0;
     // Run the query on the ruleset and each dataset
     for (const datasetAbsFilepath of datasetAbsFilepaths) {
         // Get the content of the dataset
@@ -163,7 +167,12 @@ function epilogCmd_runScript(client) {
                 client.outputChannel.appendLine(count + ". " + epilog_js.grind(result));
                 count++;
             }
+            numResults += queryResults.length;
+            numFilesWithResults++;
         }
+    }
+    if (runningQueryOnDirectory) {
+        client.outputChannel.appendLine("====== Results Summary - A total of " + numResults + " results from " + numFilesWithResults + "/" + datasetAbsFilepaths.length + " files. ======");
     }
 }
 exports.epilogCmd_runScript = epilogCmd_runScript;
