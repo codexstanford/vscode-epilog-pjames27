@@ -81,30 +81,30 @@ function refreshASTsAndInfo() {
 }
 connection.onDidChangeConfiguration(change => {
     // Revalidate all open text documents
-    documents.all().forEach(validateTextDocument);
     refreshASTsAndInfo();
+    documents.all().forEach(validateTextDocument);
 });
 connection.onDidChangeWatchedFiles(event => {
-    documents.all().forEach(validateTextDocument);
     event.changes.forEach(change => {
         // Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
         if (change.type === node_1.FileChangeType.Deleted) {
             connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
-            documentASTsAndInfo.delete(change.uri);
         }
     });
+    refreshASTsAndInfo();
+    documents.all().forEach(validateTextDocument);
 });
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-    validateTextDocument(change.document);
     const astAndInfo = (0, parsing_1.computeASTAndInfo)(change.document);
     if (astAndInfo) {
         documentASTsAndInfo.set(change.document.uri, astAndInfo);
     }
+    validateTextDocument(change.document);
 });
 async function validateTextDocument(textDocument) {
-    const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument);
+    const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument, documentASTsAndInfo);
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 connection.onRequest("textDocument/semanticTokens/full", (params) => {

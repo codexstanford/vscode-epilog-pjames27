@@ -67,6 +67,9 @@ function _computeSemanticTokensFactTerm(ast) {
             case 'TERM':
                 parsedTokens.push(..._computeSemanticTokensFactTerm(child));
                 break;
+            case 'ERROR':
+                parsedTokens.push(...(0, common_1.consume)(child));
+                break;
             default:
                 console.error('Unhandled fact term:', child);
                 parsedTokens.push(...(0, common_1.consume)(child));

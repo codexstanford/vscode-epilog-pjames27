@@ -18,6 +18,12 @@ import {
 } from '../../common/out/frontmatter.js';
 
 import {
+    ParserObject as AST,
+} from './lexers-parsers-types';
+
+import { ASTInfo } from './parsing';
+
+import {
     EPILOG_RULESET_LANGUAGE_ID,
     EPILOG_DATASET_LANGUAGE_ID,
     EPILOG_METADATA_LANGUAGE_ID,
@@ -27,7 +33,8 @@ import {
 
 import { validateDocWithFiletype_EpilogScript } from './diagnostics/validate_epilogscript';
 import { validateDocWithFiletype_EpilogBuild } from './diagnostics/validate_epilogbuild';
-//import { validateDocWithFiletype_EpilogRuleset } from './diagnostics/validate_epilogruleset';
+import { validateDocWithFiletype_EpilogRuleset } from './diagnostics/validate_epilogruleset';
+import { validateDocWithFiletype_EpilogDataset } from './diagnostics/validate_epilogdataset';
 
 type FrontMatterFieldsToValues = Map<string, string[]>;
 
@@ -58,7 +65,8 @@ const languageIdToRelevantFields = new Map<string, {required: string[], optional
 
 // Get all the diagnostics for file with an epilog-relevant language id
 export function getDiagnostics(
-    textDocument: TextDocument
+    textDocument: TextDocument,
+    documentASTsAndInfo: Map<string, {ast: AST, info: ASTInfo}>
 ): Diagnostic[] {
     const docText = textDocument.getText();
 
@@ -80,11 +88,22 @@ export function getDiagnostics(
         case EPILOG_BUILD_LANGUAGE_ID:
             filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogBuild(textDocument, docText);
             break;
-        /* TODO
         case EPILOG_RULESET_LANGUAGE_ID:
-            filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogRuleset(textDocument, docText);
+            const rulesetAstAndInfo = documentASTsAndInfo.get(textDocument.uri);
+            if (!rulesetAstAndInfo) {
+                console.error('Can\'t generate diagnostics for ruleset file - couldn\'t get AST and info for document: ', textDocument.uri);
+                break;
+            }
+            filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogRuleset(textDocument, docText, rulesetAstAndInfo);
             break;
-        */
+        case EPILOG_DATASET_LANGUAGE_ID:
+            const datasetAstAndInfo = documentASTsAndInfo.get(textDocument.uri);
+            if (!datasetAstAndInfo) {
+                console.error('Can\'t generate diagnostics for dataset file - couldn\'t get AST and info for document: ', textDocument.uri);
+                break;
+            }
+            filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogDataset(textDocument, docText, datasetAstAndInfo);
+            break;
         default:
             break;
     }

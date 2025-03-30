@@ -2,7 +2,7 @@ import { Position } from "vscode-languageserver-textdocument";
 import { Range } from "vscode-languageserver";
 import { Token as LexedToken, ParserObject as AST } from "./lexers-parsers-types";
 
-function _rangeOfAST(ast: AST): Range {
+export function rangeOfAST(ast: AST): Range {
     return {
         start: {
             line: ast.line-1,
@@ -16,7 +16,7 @@ function _rangeOfAST(ast: AST): Range {
 }
 
 function _isWithinAST(ast: AST, pos: Position): boolean {
-    const range = _rangeOfAST(ast);
+    const range = rangeOfAST(ast);
     // Not within the lines
     if (range.start.line > pos.line || range.end.line < pos.line) {
         return false;

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findTokenContainingPosition = void 0;
-function _rangeOfAST(ast) {
+exports.findTokenContainingPosition = exports.rangeOfAST = void 0;
+function rangeOfAST(ast) {
     return {
         start: {
             line: ast.line - 1,
@@ -13,8 +13,9 @@ function _rangeOfAST(ast) {
         }
     };
 }
+exports.rangeOfAST = rangeOfAST;
 function _isWithinAST(ast, pos) {
-    const range = _rangeOfAST(ast);
+    const range = rangeOfAST(ast);
     // Not within the lines
     if (range.start.line > pos.line || range.end.line < pos.line) {
         return false;

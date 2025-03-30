@@ -7,7 +7,7 @@ import {
 import * as vscode from 'vscode-languageserver';
 
 import { EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID } from '../../common/out/language_ids.js';
-import { ParserObject as AST } from './lexers-parsers-types.js';
+import { ParserObject as AST } from './lexers-parsers-types';
 import { consume, ParsedToken, isNonTerminal, isASTType } from './semantic-tokens/common.js';
 import { computeSemanticTokensRule } from './semantic-tokens/rule.js';
 import { ASTInfo } from './parsing.js';

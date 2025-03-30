@@ -120,35 +120,35 @@ function refreshASTsAndInfo() {
 
 connection.onDidChangeConfiguration(change => {
 	// Revalidate all open text documents
-	documents.all().forEach(validateTextDocument);
 	refreshASTsAndInfo();
+	documents.all().forEach(validateTextDocument);
 });
 
 connection.onDidChangeWatchedFiles(event => {
-	documents.all().forEach(validateTextDocument);
 	event.changes.forEach(change => {
 		// Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
 		if (change.type === FileChangeType.Deleted) {
 			connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
-			documentASTsAndInfo.delete(change.uri);
 		}
 	});
+	refreshASTsAndInfo();
+	documents.all().forEach(validateTextDocument);
 });
 
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-	validateTextDocument(change.document);
 	const astAndInfo = computeASTAndInfo(change.document);
 	if (astAndInfo) {
 		documentASTsAndInfo.set(change.document.uri, astAndInfo);
 	}
+	validateTextDocument(change.document);
 });
 
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-	const diagnostics = getDiagnostics(textDocument);
+	const diagnostics = getDiagnostics(textDocument, documentASTsAndInfo);
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
