@@ -11,6 +11,7 @@ import { ParserObject as AST } from './lexers-parsers-types.js';
 import { consume, ParsedToken, isNonTerminal, isASTType } from './semantic-tokens/common.js';
 import { computeSemanticTokensRule } from './semantic-tokens/rule.js';
 import { ASTInfo } from './parsing.js';
+import { computeSemanticTokensFact } from './semantic-tokens/fact.js';
 // Define the semantic token types and modifiers that our language server supports
 export const semanticTokensLegend: SemanticTokensLegend = {
 	tokenTypes: [
@@ -79,9 +80,30 @@ function _computeSemanticTokensRuleset(ast: AST, info: ASTInfo): ParsedToken[] {
     return parsedTokens;
 }
 
-function _computeSemanticTokensForDataset(ast: AST): ParsedToken[] {
-    console.error('computeSemanticTokensForDataset not implemented');
-    return [];
+function _computeSemanticTokensDataset(ast: AST, info: ASTInfo): ParsedToken[] {
+    if (!isASTType(ast, 'DATASET')) {
+        console.error('Expected AST of type DATASET');
+        return consume(ast);
+    }
+
+    if (!isNonTerminal(ast)) {
+        console.error('Expected AST of type DATASET to be a non-terminal');
+        return consume(ast);
+    }
+
+    let parsedTokens: ParsedToken[] = [];
+
+    for (const child of ast.children) {
+        switch (child.type) {
+            case 'FACT':
+                parsedTokens.push(...computeSemanticTokensFact(child));
+                break;
+            default:
+                parsedTokens.push(...consume(child));
+        }
+    }
+
+    return parsedTokens;
 }
 
 export function computeSemanticTokens(fullDocAST: AST, languageId: string, info: ASTInfo): SemanticTokens {
@@ -94,8 +116,6 @@ export function computeSemanticTokens(fullDocAST: AST, languageId: string, info:
         };
     }
 
-    let semanticTokenComputer: (ast: AST, info: ASTInfo) => ParsedToken[];
-
     let parsedTokens: ParsedToken[];
 
     switch (languageId) {
@@ -103,7 +123,7 @@ export function computeSemanticTokens(fullDocAST: AST, languageId: string, info:
             parsedTokens = _computeSemanticTokensRuleset(fullDocAST, info);
             break;
         case EPILOG_DATASET_LANGUAGE_ID:
-            parsedTokens = _computeSemanticTokensForDataset(fullDocAST);
+            parsedTokens = _computeSemanticTokensDataset(fullDocAST, info);
             break;
         default:
             throw new Error(`Semantic tokens not implemented for language id: ${languageId}`);

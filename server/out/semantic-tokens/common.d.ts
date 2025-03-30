@@ -23,4 +23,5 @@ export type ParsedToken = {
 export declare function handleBuiltinValue(ast: AST): ParsedToken[];
 export declare function handleBuiltinPred(ast: AST): ParsedToken[];
 export declare function handleBasePred(ast: AST): ParsedToken[];
+export declare function handleConstructor(ast: AST): ParsedToken[];
 export {};

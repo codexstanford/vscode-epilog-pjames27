@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleBasePred = exports.handleBuiltinPred = exports.handleBuiltinValue = exports.consume = exports.isNonTerminal = exports.isNonLeafTermType = exports.isASTType = exports.BUILT_IN_PREDS = exports.BUILT_IN_VALUES = exports.TYPES_TO_IGNORE = void 0;
+exports.handleConstructor = exports.handleBasePred = exports.handleBuiltinPred = exports.handleBuiltinValue = exports.consume = exports.isNonTerminal = exports.isNonLeafTermType = exports.isASTType = exports.BUILT_IN_PREDS = exports.BUILT_IN_VALUES = exports.TYPES_TO_IGNORE = void 0;
 exports.TYPES_TO_IGNORE = ['WHITESPACE', 'OPEN_PAREN', 'CLOSE_PAREN', 'OPEN_BRACKET', 'CLOSE_BRACKET', 'COMMA', 'PERIOD', 'LIST_SEPARATOR', 'RULE_SEPARATOR_NECK', 'AMPERSAND', 'DOUBLE_COLON', 'DOUBLE_ARROW', 'DEFINITION_SEPARATOR'];
 exports.BUILT_IN_VALUES = ['nil', 'true', 'false'];
 exports.BUILT_IN_PREDS = new Set(['member', 'same', 'distinct', 'evaluate']);
@@ -60,4 +60,8 @@ function handleBasePred(ast) {
     return consume(ast, 'variable', []);
 }
 exports.handleBasePred = handleBasePred;
+function handleConstructor(ast) {
+    return consume(ast, 'struct');
+}
+exports.handleConstructor = handleConstructor;
 //# sourceMappingURL=common.js.map

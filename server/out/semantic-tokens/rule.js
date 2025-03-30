@@ -13,11 +13,11 @@ function _computeSemanticTokensRuleHeadCompoundTerm(ast) {
     }
     // Handle the constructor of the compound term
     const constructor = ast.children[0];
-    if (constructor.type !== 'SYMBOL_TERM') {
-        console.error('Expected AST of type COMPOUND_TERM to have a constructor');
+    if (!(0, common_1.isASTType)(constructor, 'SYMBOL_TERM')) {
+        console.error('Expected AST of type COMPOUND_TERM to have a SYMBOL_TERM constructor');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
-    let parsedTokens = [...(0, common_1.consume)(constructor, 'struct')];
+    let parsedTokens = [...(0, common_1.handleConstructor)(constructor)];
     let declaredParameters = [];
     // Handle the arguments of the compound term
     for (const child of ast.children.slice(1)) {
@@ -36,7 +36,7 @@ function _computeSemanticTokensRuleHeadTerm(ast) {
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
     if (!(0, common_1.isNonTerminal)(ast)) {
-        console.error('Expected rule head TERM to be a non-terminal');
+        console.error('Expected rule head term to be a non-terminal');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
     let parsedTokens = [];
@@ -133,11 +133,11 @@ function _computeSemanticTokensRuleSubgoalCompoundTerm(ast, declaredParameters) 
     }
     // Handle the constructor of the compound term
     const constructor = ast.children[0];
-    if (constructor.type !== 'SYMBOL_TERM') {
-        console.error('Expected AST of type COMPOUND_TERM to have a constructor');
+    if (!(0, common_1.isASTType)(constructor, 'SYMBOL_TERM')) {
+        console.error('Expected AST of type COMPOUND_TERM to have a SYMBOL_TERM constructor');
         return (0, common_1.consume)(ast);
     }
-    let parsedTokens = [...(0, common_1.consume)(constructor, 'struct')];
+    let parsedTokens = [...(0, common_1.handleConstructor)(constructor)];
     for (const child of ast.children.slice(1)) {
         if (common_1.TYPES_TO_IGNORE.includes(child.type)) {
             continue;
@@ -195,6 +195,7 @@ function _computeSemanticTokensRuleSubgoalTerm(ast, declaredParameters) {
                 parsedTokens.push(..._computeSemanticTokensRuleSubgoalTerm(child, declaredParameters));
                 break;
             default:
+                console.log('Unhandled rule subgoal term: ', child);
                 parsedTokens.push(...(0, common_1.consume)(child));
         }
     }
@@ -211,7 +212,7 @@ function _computeSemanticTokensRuleSubgoalAtom(ast, declaredParameters, viewPred
     }
     // Handle the first child, i.e. the predicate
     const predicate = ast.children[0];
-    if (predicate.type !== 'SYMBOL_TERM') {
+    if (!(0, common_1.isASTType)(predicate, 'SYMBOL_TERM')) {
         console.error('Expected AST of type ATOM to have a predicate but got: ', predicate);
         return (0, common_1.consume)(ast);
     }
@@ -236,7 +237,7 @@ function _computeSemanticTokensRuleSubgoalAtom(ast, declaredParameters, viewPred
         if (common_1.TYPES_TO_IGNORE.includes(child.type)) {
             continue;
         }
-        if (child.type === 'TERM') {
+        if ((0, common_1.isASTType)(child, 'TERM')) {
             parsedTokens.push(..._computeSemanticTokensRuleSubgoalTerm(child, declaredParameters));
             continue;
         }

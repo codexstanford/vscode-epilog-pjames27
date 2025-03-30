@@ -1,4 +1,4 @@
-import { BUILT_IN_VALUES, ParsedToken, consume, TYPES_TO_IGNORE, handleBuiltinValue, isASTType, isNonLeafTermType, isNonTerminal, handleBasePred, BUILT_IN_PREDS, handleBuiltinPred } from "./common";
+import { BUILT_IN_VALUES, ParsedToken, consume, TYPES_TO_IGNORE, handleBuiltinValue, isASTType, isNonLeafTermType, isNonTerminal, handleBasePred, BUILT_IN_PREDS, handleBuiltinPred, handleConstructor } from "./common";
 import { ParserObject as AST } from "../lexers-parsers-types";
 
 
@@ -16,12 +16,12 @@ function _computeSemanticTokensRuleHeadCompoundTerm(ast: AST): {parsedTokens: Pa
     
     // Handle the constructor of the compound term
     const constructor = ast.children[0] as AST;
-    if (constructor.type !== 'SYMBOL_TERM') {
-        console.error('Expected AST of type COMPOUND_TERM to have a constructor');
+    if (!isASTType(constructor, 'SYMBOL_TERM')) {
+        console.error('Expected AST of type COMPOUND_TERM to have a SYMBOL_TERM constructor');
         return {parsedTokens: consume(ast), declaredParameters: []};
     }
 
-    let parsedTokens: ParsedToken[] = [...consume(constructor, 'struct')];
+    let parsedTokens: ParsedToken[] = [...handleConstructor(constructor)];
     let declaredParameters: string[] = [];
 
     // Handle the arguments of the compound term
@@ -45,7 +45,7 @@ function _computeSemanticTokensRuleHeadTerm(ast: AST): {parsedTokens: ParsedToke
     }
 
     if (!isNonTerminal(ast)) {
-        console.error('Expected rule head TERM to be a non-terminal');
+        console.error('Expected rule head term to be a non-terminal');
         return {parsedTokens: consume(ast), declaredParameters: []};
     }
 
@@ -158,12 +158,12 @@ function _computeSemanticTokensRuleSubgoalCompoundTerm(ast: AST, declaredParamet
 
     // Handle the constructor of the compound term
     const constructor = ast.children[0] as AST;
-    if (constructor.type !== 'SYMBOL_TERM') {
-        console.error('Expected AST of type COMPOUND_TERM to have a constructor');
+    if (!isASTType(constructor, 'SYMBOL_TERM')) {
+        console.error('Expected AST of type COMPOUND_TERM to have a SYMBOL_TERM constructor');
         return consume(ast);
     }
 
-    let parsedTokens: ParsedToken[] = [...consume(constructor, 'struct')];
+    let parsedTokens: ParsedToken[] = [...handleConstructor(constructor)];
 
     for (const child of ast.children.slice(1)) {
         if (TYPES_TO_IGNORE.includes(child.type)) {
@@ -230,6 +230,7 @@ function _computeSemanticTokensRuleSubgoalTerm(ast: AST, declaredParameters: str
                 parsedTokens.push(..._computeSemanticTokensRuleSubgoalTerm(child, declaredParameters));
                 break;
             default:
+                console.log('Unhandled rule subgoal term: ', child);
                 parsedTokens.push(...consume(child));
 
         }
@@ -253,7 +254,7 @@ function _computeSemanticTokensRuleSubgoalAtom(ast: AST, declaredParameters: str
 
     // Handle the first child, i.e. the predicate
     const predicate = ast.children[0] as AST;
-    if (predicate.type !== 'SYMBOL_TERM') {
+    if (!isASTType(predicate, 'SYMBOL_TERM')) {
         console.error('Expected AST of type ATOM to have a predicate but got: ', predicate);
         return consume(ast);
     }
@@ -281,7 +282,7 @@ function _computeSemanticTokensRuleSubgoalAtom(ast: AST, declaredParameters: str
             continue;
         }
 
-        if (child.type === 'TERM') {
+        if (isASTType(child, 'TERM')) {
             parsedTokens.push(..._computeSemanticTokensRuleSubgoalTerm(child, declaredParameters));
             continue;
         }

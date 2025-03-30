@@ -5,6 +5,7 @@ const vscode = require("vscode-languageserver");
 const language_ids_js_1 = require("../../common/out/language_ids.js");
 const common_js_1 = require("./semantic-tokens/common.js");
 const rule_js_1 = require("./semantic-tokens/rule.js");
+const fact_js_1 = require("./semantic-tokens/fact.js");
 // Define the semantic token types and modifiers that our language server supports
 exports.semanticTokensLegend = {
     tokenTypes: [
@@ -67,9 +68,26 @@ function _computeSemanticTokensRuleset(ast, info) {
     }
     return parsedTokens;
 }
-function _computeSemanticTokensForDataset(ast) {
-    console.error('computeSemanticTokensForDataset not implemented');
-    return [];
+function _computeSemanticTokensDataset(ast, info) {
+    if (!(0, common_js_1.isASTType)(ast, 'DATASET')) {
+        console.error('Expected AST of type DATASET');
+        return (0, common_js_1.consume)(ast);
+    }
+    if (!(0, common_js_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type DATASET to be a non-terminal');
+        return (0, common_js_1.consume)(ast);
+    }
+    let parsedTokens = [];
+    for (const child of ast.children) {
+        switch (child.type) {
+            case 'FACT':
+                parsedTokens.push(...(0, fact_js_1.computeSemanticTokensFact)(child));
+                break;
+            default:
+                parsedTokens.push(...(0, common_js_1.consume)(child));
+        }
+    }
+    return parsedTokens;
 }
 function computeSemanticTokens(fullDocAST, languageId, info) {
     const serviced_languages = [language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID, language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID];
@@ -79,14 +97,13 @@ function computeSemanticTokens(fullDocAST, languageId, info) {
             data: []
         };
     }
-    let semanticTokenComputer;
     let parsedTokens;
     switch (languageId) {
         case language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID:
             parsedTokens = _computeSemanticTokensRuleset(fullDocAST, info);
             break;
         case language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID:
-            parsedTokens = _computeSemanticTokensForDataset(fullDocAST);
+            parsedTokens = _computeSemanticTokensDataset(fullDocAST, info);
             break;
         default:
             throw new Error(`Semantic tokens not implemented for language id: ${languageId}`);

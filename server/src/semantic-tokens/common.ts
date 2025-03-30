@@ -78,3 +78,8 @@ export function handleBuiltinPred(ast: AST): ParsedToken[] {
 export function handleBasePred(ast: AST): ParsedToken[] {
     return consume(ast, 'variable', []);
 }
+
+
+export function handleConstructor(ast: AST): ParsedToken[] {
+    return consume(ast, 'struct');
+}
