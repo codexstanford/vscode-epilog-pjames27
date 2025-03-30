@@ -3,9 +3,6 @@ import {
 	SemanticTokensLegend
 } from 'vscode-languageserver/node';
 
-import {
-	TextDocument
-} from 'vscode-languageserver-textdocument';
 
 import * as vscode from 'vscode-languageserver';
 
@@ -14,7 +11,7 @@ import * as epilog_lexers_parsers from '../../common/out/plain-js/epilog-lexers-
 import { Token as LexedToken, ParserObject as AST } from './lexers-parsers-types.js';
 import { consume, ParsedToken } from './semantic-tokens/common.js';
 import { computeSemanticTokensRule } from './semantic-tokens/rule.js';
-
+import { ASTInfo } from './parsing.js';
 // Define the semantic token types and modifiers that our language server supports
 export const semanticTokensLegend: SemanticTokensLegend = {
 	tokenTypes: [
@@ -56,49 +53,7 @@ export const semanticTokensLegend: SemanticTokensLegend = {
 	]
 };
 
-function _computeViewPredicates(ast: AST): Set<string> {
-    if (ast.type !== 'RULESET') {
-        console.error('Expected AST of type RULESET');
-        return new Set();
-    }
-
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type RULESET to have children');
-        return new Set();
-    }
-    
-    const viewPredicates: Set<string> = new Set();
-    for (const child of ast.children) {
-        if (child.type === 'RULE') {
-            const rule_head = child.children?.[0];
-            if (rule_head === undefined) {
-                console.error('Expected AST of type RULE to have a rule head');
-                continue;
-            }
-            
-            if (rule_head.type !== 'ATOM') {
-                console.error('Expected AST of type RULE to have a rule head of type ATOM');
-                continue;
-            }
-
-            const predicate = rule_head.children?.[0];
-            if (predicate === undefined) {
-                console.error('Expected AST of type ATOM to have a predicate');
-                continue;
-            }
-
-            if (predicate.type !== 'SYMBOL_TERM') {
-                console.error('Expected AST of type ATOM to have a predicate of type SYMBOL_TERM');
-                continue;
-            }
-
-            viewPredicates.add(predicate.content);
-        }
-    }
-    return viewPredicates;
-}
-
-function _computeSemanticTokensRuleset(ast: AST): ParsedToken[] {
+function _computeSemanticTokensRuleset(ast: AST, info: ASTInfo): ParsedToken[] {
     if (ast.type !== 'RULESET') {
         console.error('Expected AST of type RULESET');
         return consume(ast);
@@ -109,9 +64,7 @@ function _computeSemanticTokensRuleset(ast: AST): ParsedToken[] {
         return consume(ast);
     }
 
-    // Compute all of the view predicates
-    const viewPredicates: Set<string> = _computeViewPredicates(ast);
-
+    const viewPredicates: Set<string> = new Set(info.viewPredToDef.keys());
     let parsedTokens: ParsedToken[] = [];
 
     for (const child of ast.children) {
@@ -132,7 +85,7 @@ function _computeSemanticTokensForDataset(ast: AST): ParsedToken[] {
     return [];
 }
 
-export function computeSemanticTokens(fullDocAST: AST, languageId: string): SemanticTokens {
+export function computeSemanticTokens(fullDocAST: AST, languageId: string, info: ASTInfo): SemanticTokens {
     const serviced_languages = [EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID];
 
     if (!serviced_languages.includes(languageId)) {
@@ -142,7 +95,7 @@ export function computeSemanticTokens(fullDocAST: AST, languageId: string): Sema
         };
     }
 
-    let semanticTokenComputer: (ast: AST) => ParsedToken[];
+    let semanticTokenComputer: (ast: AST, info: ASTInfo) => ParsedToken[];
 
     switch (languageId) {
         case EPILOG_RULESET_LANGUAGE_ID:
@@ -155,7 +108,7 @@ export function computeSemanticTokens(fullDocAST: AST, languageId: string): Sema
             throw new Error(`Semantic tokens not implemented for language id: ${languageId}`);
     }
 
-    const parsedTokens: ParsedToken[] = semanticTokenComputer(fullDocAST);
+    const parsedTokens: ParsedToken[] = semanticTokenComputer(fullDocAST, info);
     
     function _encodeTokenType(tokenType: string): number {
         if (semanticTokensLegend.tokenTypes.includes(tokenType)) {

@@ -12,7 +12,8 @@ import {
 	InitializeResult,
 	FileChangeType,
 	ServerCapabilities,
-	SemanticTokensParams
+	SemanticTokensParams,
+	DefinitionParams
 } from 'vscode-languageserver/node';
 
 import {
@@ -22,19 +23,23 @@ import {
 import {getDiagnostics} from './diagnostics';
 import {semanticTokensLegend, computeSemanticTokens} from './semantic-tokens';
 import { ParserObject as AST } from './lexers-parsers-types';
-import { parseToAST } from './parsing';
+import { ASTInfo, computeASTAndInfo } from './parsing';
+import { getViewPredicateDefinition } from './definition-provider';
+import { EPILOG_RULESET_LANGUAGE_ID } from '../../common/out/language_ids.js';
+
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-const documentASTs: Map<string, AST> = new Map();
+const documentASTsAndInfo: Map<string, {ast: AST, info: ASTInfo}> = new Map();
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
 let hasSemanticTokensCapability = false;
+let hasDefinitionCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
@@ -56,6 +61,11 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument &&
 		capabilities.textDocument.semanticTokens
 	);
+	hasDefinitionCapability = !!(
+		capabilities.textDocument &&
+		capabilities.textDocument.definition
+	);
+
 
 	const serverCapabilities: ServerCapabilities = {
 		textDocumentSync: TextDocumentSyncKind.Incremental
@@ -76,6 +86,10 @@ connection.onInitialize((params: InitializeParams) => {
 		};
 	}
 
+	if (hasDefinitionCapability) {
+		serverCapabilities.definitionProvider = true;
+	}
+
 	const result: InitializeResult = {
 		capabilities: serverCapabilities
 	};
@@ -94,13 +108,10 @@ connection.onInitialized(() => {
 	}
 });
 
-
-
 connection.onDidChangeConfiguration(change => {
 	// Revalidate all open text documents
 	documents.all().forEach(validateTextDocument);
-	// Clear the document ASTs
-	documentASTs.clear();
+	documentASTsAndInfo.clear();
 });
 
 connection.onDidChangeWatchedFiles(event => {
@@ -109,7 +120,7 @@ connection.onDidChangeWatchedFiles(event => {
 		// Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
 		if (change.type === FileChangeType.Deleted) {
 			connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
-			documentASTs.delete(change.uri);
+			documentASTsAndInfo.delete(change.uri);
 		}
 	});
 });
@@ -119,9 +130,9 @@ connection.onDidChangeWatchedFiles(event => {
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
-	const ast = parseToAST(change.document);
-	if (ast) {
-		documentASTs.set(change.document.uri, ast);
+	const astAndInfo = computeASTAndInfo(change.document);
+	if (astAndInfo) {
+		documentASTsAndInfo.set(change.document.uri, astAndInfo);
 	}
 });
 
@@ -135,22 +146,43 @@ connection.onRequest("textDocument/semanticTokens/full", (params: SemanticTokens
 	// Implement your logic to provide semantic tokens for the given document here.
 	// You should return the semantic tokens as a response.
 	const document = documents.get(params.textDocument.uri);
-	const ast = documentASTs.get(params.textDocument.uri);
+	const astAndInfo = documentASTsAndInfo.get(params.textDocument.uri);
 	if (!document) {
 		return {
 			data: []
 		};
 	}
-	if (!ast) {
-		console.error('No AST found for document: ', params.textDocument.uri);
+	if (!astAndInfo) {
+		console.error('No AST and info found for document: ', params.textDocument.uri);
 		return {
 			data: []
 		};
 	}
 	console.log('Computing semantic tokens for document', document.uri);
-	const semanticTokens = computeSemanticTokens(ast, document.languageId);
+	const semanticTokens = computeSemanticTokens(astAndInfo.ast, document.languageId, astAndInfo.info);
 	return semanticTokens;
-  });
+});
+
+connection.onRequest("textDocument/definition", (params: DefinitionParams) => {
+	// Only provided for ruleset files
+	const languageId = documents.get(params.textDocument.uri)?.languageId;
+	if (languageId !== EPILOG_RULESET_LANGUAGE_ID) {
+		return null;
+	}
+
+	const document = documents.get(params.textDocument.uri);
+	const astAndInfo = documentASTsAndInfo.get(params.textDocument.uri);
+	if (!document) {
+		return null;
+	}
+	if (!astAndInfo) {
+		console.error('Cannot return definition location - no AST and info found for document: ', params.textDocument.uri);
+		return null;
+	}
+
+	const definition = getViewPredicateDefinition(astAndInfo.ast, params.position, astAndInfo.info.viewPredToDef);
+	return definition;
+});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

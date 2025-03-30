@@ -45,42 +45,7 @@ exports.semanticTokensLegend = {
         'defaultLibrary'
     ]
 };
-function _computeViewPredicates(ast) {
-    if (ast.type !== 'RULESET') {
-        console.error('Expected AST of type RULESET');
-        return new Set();
-    }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type RULESET to have children');
-        return new Set();
-    }
-    const viewPredicates = new Set();
-    for (const child of ast.children) {
-        if (child.type === 'RULE') {
-            const rule_head = child.children?.[0];
-            if (rule_head === undefined) {
-                console.error('Expected AST of type RULE to have a rule head');
-                continue;
-            }
-            if (rule_head.type !== 'ATOM') {
-                console.error('Expected AST of type RULE to have a rule head of type ATOM');
-                continue;
-            }
-            const predicate = rule_head.children?.[0];
-            if (predicate === undefined) {
-                console.error('Expected AST of type ATOM to have a predicate');
-                continue;
-            }
-            if (predicate.type !== 'SYMBOL_TERM') {
-                console.error('Expected AST of type ATOM to have a predicate of type SYMBOL_TERM');
-                continue;
-            }
-            viewPredicates.add(predicate.content);
-        }
-    }
-    return viewPredicates;
-}
-function _computeSemanticTokensRuleset(ast) {
+function _computeSemanticTokensRuleset(ast, info) {
     if (ast.type !== 'RULESET') {
         console.error('Expected AST of type RULESET');
         return (0, common_js_1.consume)(ast);
@@ -89,8 +54,7 @@ function _computeSemanticTokensRuleset(ast) {
         console.error('Expected AST of type RULESET to have children');
         return (0, common_js_1.consume)(ast);
     }
-    // Compute all of the view predicates
-    const viewPredicates = _computeViewPredicates(ast);
+    const viewPredicates = new Set(info.viewPredToDef.keys());
     let parsedTokens = [];
     for (const child of ast.children) {
         switch (child.type) {
@@ -107,7 +71,7 @@ function _computeSemanticTokensForDataset(ast) {
     console.error('computeSemanticTokensForDataset not implemented');
     return [];
 }
-function computeSemanticTokens(fullDocAST, languageId) {
+function computeSemanticTokens(fullDocAST, languageId, info) {
     const serviced_languages = [language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID, language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID];
     if (!serviced_languages.includes(languageId)) {
         console.log(`Semantic tokens not provided for language ${languageId}`);
@@ -126,7 +90,7 @@ function computeSemanticTokens(fullDocAST, languageId) {
         default:
             throw new Error(`Semantic tokens not implemented for language id: ${languageId}`);
     }
-    const parsedTokens = semanticTokenComputer(fullDocAST);
+    const parsedTokens = semanticTokenComputer(fullDocAST, info);
     function _encodeTokenType(tokenType) {
         if (exports.semanticTokensLegend.tokenTypes.includes(tokenType)) {
             return exports.semanticTokensLegend.tokenTypes.indexOf(tokenType);

@@ -1,3 +1,10 @@
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { ParserObject as AST } from "./lexers-parsers-types";
-export declare function parseToAST(document: TextDocument): AST | null;
+import { Location } from "vscode-languageserver";
+export type ASTInfo = {
+    viewPredToDef: Map<string, Location[]>;
+};
+export declare function computeASTAndInfo(document: TextDocument): {
+    ast: AST;
+    info: ASTInfo;
+} | null;
