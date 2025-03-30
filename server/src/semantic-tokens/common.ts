@@ -3,7 +3,7 @@ import { ParserObject as AST, RulesetParserObjectType } from "../lexers-parsers-
 
 export const TYPES_TO_IGNORE = ['WHITESPACE', 'OPEN_PAREN', 'CLOSE_PAREN', 'OPEN_BRACKET', 'CLOSE_BRACKET', 'COMMA', 'PERIOD', 'LIST_SEPARATOR', 'RULE_SEPARATOR_NECK', 'AMPERSAND', 'DOUBLE_COLON', 'DOUBLE_ARROW', 'DEFINITION_SEPARATOR'];
 export const BUILT_IN_VALUES = ['nil', 'true', 'false'];
-export const BUILT_IN_PREDS = new Set(['member', 'same', 'distinct']);
+export const BUILT_IN_PREDS = new Set(['member', 'same', 'distinct', 'evaluate']);
 
 
 export interface NarrowedAST<T extends RulesetParserObjectType> extends AST {

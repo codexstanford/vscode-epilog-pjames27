@@ -153,8 +153,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 }
 
 connection.onRequest("textDocument/semanticTokens/full", (params: SemanticTokensParams) => {
-	// Implement your logic to provide semantic tokens for the given document here.
-	// You should return the semantic tokens as a response.
 	const document = documents.get(params.textDocument.uri);
 	const astAndInfo = documentASTsAndInfo.get(params.textDocument.uri);
 	if (!document) {
@@ -168,7 +166,7 @@ connection.onRequest("textDocument/semanticTokens/full", (params: SemanticTokens
 			data: []
 		};
 	}
-	console.log('Computing semantic tokens for document', document.uri);
+	//console.log('Computing semantic tokens for document', document.uri);
 	const semanticTokens = computeSemanticTokens(astAndInfo.ast, document.languageId, astAndInfo.info);
 	return semanticTokens;
 });
