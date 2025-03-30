@@ -27,6 +27,7 @@ import {
 
 import { validateDocWithFiletype_EpilogScript } from './diagnostics/validate_epilogscript';
 import { validateDocWithFiletype_EpilogBuild } from './diagnostics/validate_epilogbuild';
+//import { validateDocWithFiletype_EpilogRuleset } from './diagnostics/validate_epilogruleset';
 
 type FrontMatterFieldsToValues = Map<string, string[]>;
 
@@ -79,6 +80,11 @@ export function getDiagnostics(
         case EPILOG_BUILD_LANGUAGE_ID:
             filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogBuild(textDocument, docText);
             break;
+        /* TODO
+        case EPILOG_RULESET_LANGUAGE_ID:
+            filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogRuleset(textDocument, docText);
+            break;
+        */
         default:
             break;
     }

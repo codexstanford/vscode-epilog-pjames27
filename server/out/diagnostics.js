@@ -51,6 +51,11 @@ function getDiagnostics(textDocument) {
         case language_ids_js_1.EPILOG_BUILD_LANGUAGE_ID:
             filetypeSpecificDiagnostics = (0, validate_epilogbuild_1.validateDocWithFiletype_EpilogBuild)(textDocument, docText);
             break;
+        /* TODO
+        case EPILOG_RULESET_LANGUAGE_ID:
+            filetypeSpecificDiagnostics = validateDocWithFiletype_EpilogRuleset(textDocument, docText);
+            break;
+        */
         default:
             break;
     }

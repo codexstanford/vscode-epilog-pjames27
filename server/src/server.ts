@@ -10,7 +10,9 @@ import {
 	DidChangeConfigurationNotification,
 	TextDocumentSyncKind,
 	InitializeResult,
-	FileChangeType
+	FileChangeType,
+	ServerCapabilities,
+	SemanticTokensParams
 } from 'vscode-languageserver/node';
 
 import {
@@ -18,17 +20,21 @@ import {
 } from 'vscode-languageserver-textdocument';
 
 import {getDiagnostics} from './diagnostics';
-
+import {semanticTokensLegend, computeSemanticTokens} from './semantic-tokens';
+import { ParserObject as AST } from './lexers-parsers-types';
+import { parseToAST } from './parsing';
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+const documentASTs: Map<string, AST> = new Map();
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
+let hasSemanticTokensCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
@@ -46,19 +52,33 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities.textDocument.publishDiagnostics &&
 		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
+	hasSemanticTokensCapability = !!(
+		capabilities.textDocument &&
+		capabilities.textDocument.semanticTokens
+	);
 
-	const result: InitializeResult = {
-		capabilities: {
-			textDocumentSync: TextDocumentSyncKind.Incremental,
-		}
+	const serverCapabilities: ServerCapabilities = {
+		textDocumentSync: TextDocumentSyncKind.Incremental
 	};
+
 	if (hasWorkspaceFolderCapability) {
-		result.capabilities.workspace = {
+		serverCapabilities.workspace = {
 			workspaceFolders: {
 				supported: true
 			}
 		};
 	}
+
+	if (hasSemanticTokensCapability) {
+		serverCapabilities.semanticTokensProvider = {
+			legend: semanticTokensLegend,
+			full: true
+		};
+	}
+
+	const result: InitializeResult = {
+		capabilities: serverCapabilities
+	};
 	return result;
 });
 
@@ -79,6 +99,8 @@ connection.onInitialized(() => {
 connection.onDidChangeConfiguration(change => {
 	// Revalidate all open text documents
 	documents.all().forEach(validateTextDocument);
+	// Clear the document ASTs
+	documentASTs.clear();
 });
 
 connection.onDidChangeWatchedFiles(event => {
@@ -87,6 +109,7 @@ connection.onDidChangeWatchedFiles(event => {
 		// Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
 		if (change.type === FileChangeType.Deleted) {
 			connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
+			documentASTs.delete(change.uri);
 		}
 	});
 });
@@ -96,15 +119,38 @@ connection.onDidChangeWatchedFiles(event => {
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
+	const ast = parseToAST(change.document);
+	if (ast) {
+		documentASTs.set(change.document.uri, ast);
+	}
 });
 
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const diagnostics = getDiagnostics(textDocument);
-
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
+connection.onRequest("textDocument/semanticTokens/full", (params: SemanticTokensParams) => {
+	// Implement your logic to provide semantic tokens for the given document here.
+	// You should return the semantic tokens as a response.
+	const document = documents.get(params.textDocument.uri);
+	const ast = documentASTs.get(params.textDocument.uri);
+	if (!document) {
+		return {
+			data: []
+		};
+	}
+	if (!ast) {
+		console.error('No AST found for document: ', params.textDocument.uri);
+		return {
+			data: []
+		};
+	}
+	console.log('Computing semantic tokens for document', document.uri);
+	const semanticTokens = computeSemanticTokens(ast, document.languageId);
+	return semanticTokens;
+  });
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

@@ -7,14 +7,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_1 = require("vscode-languageserver/node");
 const vscode_languageserver_textdocument_1 = require("vscode-languageserver-textdocument");
 const diagnostics_1 = require("./diagnostics");
+const semantic_tokens_1 = require("./semantic-tokens");
+const parsing_1 = require("./parsing");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = (0, node_1.createConnection)(node_1.ProposedFeatures.all);
 // Create a simple text document manager.
 const documents = new node_1.TextDocuments(vscode_languageserver_textdocument_1.TextDocument);
+const documentASTs = new Map();
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
+let hasSemanticTokensCapability = false;
 connection.onInitialize((params) => {
     const capabilities = params.capabilities;
     // Does the client support the `workspace/configuration` request?
@@ -24,18 +28,27 @@ connection.onInitialize((params) => {
     hasDiagnosticRelatedInformationCapability = !!(capabilities.textDocument &&
         capabilities.textDocument.publishDiagnostics &&
         capabilities.textDocument.publishDiagnostics.relatedInformation);
-    const result = {
-        capabilities: {
-            textDocumentSync: node_1.TextDocumentSyncKind.Incremental,
-        }
+    hasSemanticTokensCapability = !!(capabilities.textDocument &&
+        capabilities.textDocument.semanticTokens);
+    const serverCapabilities = {
+        textDocumentSync: node_1.TextDocumentSyncKind.Incremental
     };
     if (hasWorkspaceFolderCapability) {
-        result.capabilities.workspace = {
+        serverCapabilities.workspace = {
             workspaceFolders: {
                 supported: true
             }
         };
     }
+    if (hasSemanticTokensCapability) {
+        serverCapabilities.semanticTokensProvider = {
+            legend: semantic_tokens_1.semanticTokensLegend,
+            full: true
+        };
+    }
+    const result = {
+        capabilities: serverCapabilities
+    };
     return result;
 });
 connection.onInitialized(() => {
@@ -52,6 +65,8 @@ connection.onInitialized(() => {
 connection.onDidChangeConfiguration(change => {
     // Revalidate all open text documents
     documents.all().forEach(validateTextDocument);
+    // Clear the document ASTs
+    documentASTs.clear();
 });
 connection.onDidChangeWatchedFiles(event => {
     documents.all().forEach(validateTextDocument);
@@ -59,6 +74,7 @@ connection.onDidChangeWatchedFiles(event => {
         // Clear diagnostics for deleted files. Doesn't handle when their containing folder is deleted.
         if (change.type === node_1.FileChangeType.Deleted) {
             connection.sendDiagnostics({ uri: change.uri, diagnostics: [] });
+            documentASTs.delete(change.uri);
         }
     });
 });
@@ -66,11 +82,35 @@ connection.onDidChangeWatchedFiles(event => {
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
     validateTextDocument(change.document);
+    const ast = (0, parsing_1.parseToAST)(change.document);
+    if (ast) {
+        documentASTs.set(change.document.uri, ast);
+    }
 });
 async function validateTextDocument(textDocument) {
     const diagnostics = (0, diagnostics_1.getDiagnostics)(textDocument);
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
+connection.onRequest("textDocument/semanticTokens/full", (params) => {
+    // Implement your logic to provide semantic tokens for the given document here.
+    // You should return the semantic tokens as a response.
+    const document = documents.get(params.textDocument.uri);
+    const ast = documentASTs.get(params.textDocument.uri);
+    if (!document) {
+        return {
+            data: []
+        };
+    }
+    if (!ast) {
+        console.error('No AST found for document: ', params.textDocument.uri);
+        return {
+            data: []
+        };
+    }
+    console.log('Computing semantic tokens for document', document.uri);
+    const semanticTokens = (0, semantic_tokens_1.computeSemanticTokens)(ast, document.languageId);
+    return semanticTokens;
+});
 // Make the text document manager listen on the connection
 // for open, change and close text document events
 documents.listen(connection);
