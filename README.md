@@ -7,6 +7,7 @@ A Language Server extension which provides language support for Epilog, the logi
 - Provides a "Run Script" command which allows Epilog queries to be run from a .epilogscript file.
 - Provides a "Consolidate" command which can be run to gather and save content from referenced files into a single file.
 - Enables decomposition by allowing reference to metadata, data, and rules from other files of the same type.
+- Provides basic error detection. (See "Error Detection" below for details.)
 
 ## Usage Notes
 See the "File types" section below.
@@ -57,6 +58,14 @@ data:
 ---
 ```
 
+## Error Detection
+- .hrf (ruleset files)
+    - Basic parse error detection.
+- .hdf (dataset files)
+    - Basic parse error detection.
+    - Detects when variables are present.
+
+
 ## Extension Settings
 - Epilog > Universal
     - Data: absolute filepath to a .hdf file. Will be included in dataset when running a query.
@@ -70,6 +79,10 @@ data:
 - Resolving full file content can fail when referenced files have different line endings (CLRF vs LF)
 
 ## Release Notes
+### 0.3.1
+- Added basic parse error checking for dataset and ruleset files.
+- Also flags when variables appear in datasets.
+
 ### 0.3.0
 - Significantly improved syntax highlighting through the provision of semantic tokens.
     - Uses Paul Welter's lexers and parsers that CodeX commissioned for Epilog.
