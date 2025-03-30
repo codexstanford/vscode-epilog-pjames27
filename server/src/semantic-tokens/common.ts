@@ -1,24 +1,34 @@
-import { ParserObject as AST } from "../lexers-parsers-types";
+import { ParserObject as AST, RulesetParserObjectType } from "../lexers-parsers-types";
 
-export type ParsedToken = {
-    line: number;
-    start: number;
-    length: number;
-    type: string;
-    modifiers: string[];
-}
 
 export const TYPES_TO_IGNORE = ['WHITESPACE', 'OPEN_PAREN', 'CLOSE_PAREN', 'OPEN_BRACKET', 'CLOSE_BRACKET', 'COMMA', 'PERIOD', 'LIST_SEPARATOR', 'RULE_SEPARATOR_NECK', 'AMPERSAND', 'DOUBLE_COLON', 'DOUBLE_ARROW', 'DEFINITION_SEPARATOR'];
-
 export const BUILT_IN_VALUES = ['nil', 'true', 'false'];
+
+export interface NarrowedAST<T extends RulesetParserObjectType> extends AST {
+    type: T;
+}
+
+export function isASTType<T extends RulesetParserObjectType>(ast: AST, type: T): ast is NarrowedAST<T> {
+    return ast.type === type;
+}
+
+const NON_LEAF_TERM_TYPES: RulesetParserObjectType[] = ['TERM', 'COMPOUND_TERM', 'LIST_TERM', 'SIMPLE_TERM'];
+type NonLeafTermType = typeof NON_LEAF_TERM_TYPES[number];
+export function isNonLeafTermType(ast: AST): ast is NarrowedAST<NonLeafTermType> {
+    return NON_LEAF_TERM_TYPES.includes(ast.type);
+}
+
+export function isNonTerminal<T extends AST>(ast: T): ast is T & {children: [AST, ...AST[]]} {
+    return ast.children !== undefined && ast.children.length > 0;
+}
 
 export function consume(ast: AST, tokenTypeToUse: string = "", tokenModifiersToUse: string[] = []): ParsedToken[] {
     const parsedTokens: ParsedToken[] = [];
-
+    
     if (TYPES_TO_IGNORE.includes(ast.type)) {
         return parsedTokens;
     }
-
+    
     // If the token has no children, it is a leaf
     if (ast.children === undefined || ast.children.length === 0) {
         parsedTokens.push({
@@ -39,6 +49,14 @@ export function consume(ast: AST, tokenTypeToUse: string = "", tokenModifiersToU
     return parsedTokens;
 }
 
+export type ParsedToken = {
+    line: number;
+    start: number;
+    length: number;
+    type: string;
+    modifiers: string[];
+}
+
 export function handleBuiltinValue(ast: AST): ParsedToken[] {
     if (!BUILT_IN_VALUES.includes(ast.content)) {
         console.error('Expected builtin value but got: ', ast.content);
@@ -47,3 +65,5 @@ export function handleBuiltinValue(ast: AST): ParsedToken[] {
     return consume(ast, 'variable', ['readonly', 'defaultLibrary']);
 }
 
+export const BASE_PRED_TOKEN_TYPE = 'property';
+export const BASE_PRED_TOKEN_MODIFIERS = [];

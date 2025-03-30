@@ -46,12 +46,12 @@ exports.semanticTokensLegend = {
     ]
 };
 function _computeSemanticTokensRuleset(ast, info) {
-    if (ast.type !== 'RULESET') {
+    if (!(0, common_js_1.isASTType)(ast, 'RULESET')) {
         console.error('Expected AST of type RULESET');
         return (0, common_js_1.consume)(ast);
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type RULESET to have children');
+    if (!(0, common_js_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type RULESET to be a non-terminal');
         return (0, common_js_1.consume)(ast);
     }
     const viewPredicates = new Set(info.viewPredToDef.keys());
@@ -80,17 +80,17 @@ function computeSemanticTokens(fullDocAST, languageId, info) {
         };
     }
     let semanticTokenComputer;
+    let parsedTokens;
     switch (languageId) {
         case language_ids_js_1.EPILOG_RULESET_LANGUAGE_ID:
-            semanticTokenComputer = _computeSemanticTokensRuleset;
+            parsedTokens = _computeSemanticTokensRuleset(fullDocAST, info);
             break;
         case language_ids_js_1.EPILOG_DATASET_LANGUAGE_ID:
-            semanticTokenComputer = _computeSemanticTokensForDataset;
+            parsedTokens = _computeSemanticTokensForDataset(fullDocAST);
             break;
         default:
             throw new Error(`Semantic tokens not implemented for language id: ${languageId}`);
     }
-    const parsedTokens = semanticTokenComputer(fullDocAST, info);
     function _encodeTokenType(tokenType) {
         if (exports.semanticTokensLegend.tokenTypes.includes(tokenType)) {
             return exports.semanticTokensLegend.tokenTypes.indexOf(tokenType);

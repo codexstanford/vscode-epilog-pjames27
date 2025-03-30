@@ -7,9 +7,8 @@ import {
 import * as vscode from 'vscode-languageserver';
 
 import { EPILOG_RULESET_LANGUAGE_ID, EPILOG_DATASET_LANGUAGE_ID } from '../../common/out/language_ids.js';
-import * as epilog_lexers_parsers from '../../common/out/plain-js/epilog-lexers-parsers.js';
-import { Token as LexedToken, ParserObject as AST } from './lexers-parsers-types.js';
-import { consume, ParsedToken } from './semantic-tokens/common.js';
+import { ParserObject as AST } from './lexers-parsers-types.js';
+import { consume, ParsedToken, isNonTerminal, isASTType } from './semantic-tokens/common.js';
 import { computeSemanticTokensRule } from './semantic-tokens/rule.js';
 import { ASTInfo } from './parsing.js';
 // Define the semantic token types and modifiers that our language server supports
@@ -54,13 +53,13 @@ export const semanticTokensLegend: SemanticTokensLegend = {
 };
 
 function _computeSemanticTokensRuleset(ast: AST, info: ASTInfo): ParsedToken[] {
-    if (ast.type !== 'RULESET') {
+    if (!isASTType(ast, 'RULESET')) {
         console.error('Expected AST of type RULESET');
         return consume(ast);
     }
 
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type RULESET to have children');
+    if (!isNonTerminal(ast)) {
+        console.error('Expected AST of type RULESET to be a non-terminal');
         return consume(ast);
     }
 
@@ -97,18 +96,18 @@ export function computeSemanticTokens(fullDocAST: AST, languageId: string, info:
 
     let semanticTokenComputer: (ast: AST, info: ASTInfo) => ParsedToken[];
 
+    let parsedTokens: ParsedToken[];
+
     switch (languageId) {
         case EPILOG_RULESET_LANGUAGE_ID:
-            semanticTokenComputer = _computeSemanticTokensRuleset;
+            parsedTokens = _computeSemanticTokensRuleset(fullDocAST, info);
             break;
         case EPILOG_DATASET_LANGUAGE_ID:
-            semanticTokenComputer = _computeSemanticTokensForDataset;
+            parsedTokens = _computeSemanticTokensForDataset(fullDocAST);
             break;
         default:
             throw new Error(`Semantic tokens not implemented for language id: ${languageId}`);
     }
-
-    const parsedTokens: ParsedToken[] = semanticTokenComputer(fullDocAST, info);
     
     function _encodeTokenType(tokenType: string): number {
         if (semanticTokensLegend.tokenTypes.includes(tokenType)) {

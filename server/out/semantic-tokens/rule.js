@@ -3,12 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.computeSemanticTokensRule = void 0;
 const common_1 = require("./common");
 function _computeSemanticTokensRuleHeadCompoundTerm(ast) {
-    if (ast.type !== 'COMPOUND_TERM') {
+    if (!(0, common_1.isASTType)(ast, 'COMPOUND_TERM')) {
         console.error('Expected AST of type COMPOUND_TERM');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type COMPOUND_TERM to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type COMPOUND_TERM to be a non-terminal');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
     // Handle the constructor of the compound term
@@ -31,13 +31,12 @@ function _computeSemanticTokensRuleHeadCompoundTerm(ast) {
     return { parsedTokens, declaredParameters };
 }
 function _computeSemanticTokensRuleHeadTerm(ast) {
-    const COMPLEX_TERM_TYPES = ['TERM', 'COMPOUND_TERM', 'LIST_TERM', 'SIMPLE_TERM'];
-    if (!COMPLEX_TERM_TYPES.includes(ast.type)) {
-        console.error('Expected AST of type TERM, COMPOUND_TERM, LIST_TERM, or SIMPLE_TERM but got: ', ast);
+    if (!(0, common_1.isNonLeafTermType)(ast)) {
+        console.error('Expected non-leaf term AST but got: ', ast);
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected rule head TERM to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected rule head TERM to be a non-terminal');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
     let parsedTokens = [];
@@ -93,12 +92,12 @@ function _computeSemanticTokensRuleHeadTerm(ast) {
     return { parsedTokens, declaredParameters };
 }
 function _computeSemanticTokensRuleHead(ast) {
-    if (ast.type !== 'ATOM') {
+    if (!(0, common_1.isASTType)(ast, 'ATOM')) {
         console.error('Expected AST of type ATOM');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Rule head: Expected AST of type ATOM to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Rule head: Expected AST of type ATOM to be a non-terminal');
         return { parsedTokens: (0, common_1.consume)(ast), declaredParameters: [] };
     }
     let parsedTokens = [];
@@ -124,12 +123,12 @@ function _computeSemanticTokensRuleHead(ast) {
     return { parsedTokens, declaredParameters };
 }
 function _computeSemanticTokensRuleSubgoalCompoundTerm(ast, declaredParameters) {
-    if (ast.type !== 'COMPOUND_TERM') {
+    if (!(0, common_1.isASTType)(ast, 'COMPOUND_TERM')) {
         console.error('Expected AST of type COMPOUND_TERM but got: ', ast);
         return (0, common_1.consume)(ast);
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type COMPOUND_TERM to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type COMPOUND_TERM to be a non-terminal');
         return (0, common_1.consume)(ast);
     }
     // Handle the constructor of the compound term
@@ -148,13 +147,12 @@ function _computeSemanticTokensRuleSubgoalCompoundTerm(ast, declaredParameters) 
     return parsedTokens;
 }
 function _computeSemanticTokensRuleSubgoalTerm(ast, declaredParameters) {
-    const COMPLEX_TERM_TYPES = ['TERM', 'COMPOUND_TERM', 'LIST_TERM', 'SIMPLE_TERM'];
-    if (!COMPLEX_TERM_TYPES.includes(ast.type)) {
-        console.error('Expected AST of type TERM, COMPOUND_TERM, LIST_TERM, or SIMPLE_TERM but got: ', ast);
+    if (!(0, common_1.isNonLeafTermType)(ast)) {
+        console.error('Expected non-leaf term AST but got: ', ast);
         return (0, common_1.consume)(ast);
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected rule head TERM to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected rule head TERM to be a non-terminal');
         return (0, common_1.consume)(ast);
     }
     let parsedTokens = [];
@@ -203,12 +201,12 @@ function _computeSemanticTokensRuleSubgoalTerm(ast, declaredParameters) {
     return parsedTokens;
 }
 function _computeSemanticTokensRuleSubgoalAtom(ast, declaredParameters, viewPredicates) {
-    if (ast.type !== 'ATOM') {
+    if (!(0, common_1.isASTType)(ast, 'ATOM')) {
         console.error('Expected AST of type ATOM but got: ', ast);
         return (0, common_1.consume)(ast);
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type ATOM to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type ATOM to be a non-terminal');
         return (0, common_1.consume)(ast);
     }
     // Handle the first child, i.e. the predicate
@@ -222,7 +220,7 @@ function _computeSemanticTokensRuleSubgoalAtom(ast, declaredParameters, viewPred
         predicateTokens = [...(0, common_1.consume)(predicate, 'function')];
     }
     else {
-        predicateTokens = [...(0, common_1.consume)(predicate, 'property')];
+        predicateTokens = [...(0, common_1.consume)(predicate, common_1.BASE_PRED_TOKEN_TYPE, common_1.BASE_PRED_TOKEN_MODIFIERS)];
     }
     let parsedTokens = [...predicateTokens];
     // Handle the rest of the children, i.e. the arguments
@@ -245,12 +243,12 @@ function _computeSemanticTokensRuleSubgoalAtom(ast, declaredParameters, viewPred
     return parsedTokens;
 }
 function _computeSemanticTokensRuleSubgoal(ast, declaredParameters, viewPredicates) {
-    if (ast.type !== 'LITERAL') {
+    if (!(0, common_1.isASTType)(ast, 'LITERAL')) {
         console.error('Expected AST of type LITERAL but got: ', ast);
         return (0, common_1.consume)(ast);
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type LITERAL to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type LITERAL to be a non-terminal');
         return (0, common_1.consume)(ast);
     }
     let parsedTokens = [];
@@ -272,12 +270,12 @@ function _computeSemanticTokensRuleSubgoal(ast, declaredParameters, viewPredicat
     return parsedTokens;
 }
 function computeSemanticTokensRule(ast, viewPredicates) {
-    if (ast.type !== 'RULE') {
+    if (!(0, common_1.isASTType)(ast, 'RULE')) {
         console.error('Expected AST of type RULE');
         return (0, common_1.consume)(ast);
     }
-    if (ast.children === undefined || ast.children.length === 0) {
-        console.error('Expected AST of type RULE to have children');
+    if (!(0, common_1.isNonTerminal)(ast)) {
+        console.error('Expected AST of type RULE to be a non-terminal');
         return (0, common_1.consume)(ast);
     }
     let parsedTokens = [];
