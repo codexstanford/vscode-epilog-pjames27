@@ -1,4 +1,4 @@
-import { BUILT_IN_VALUES, ParsedToken, consume, TYPES_TO_IGNORE, handleBuiltinValue, BASE_PRED_TOKEN_MODIFIERS, BASE_PRED_TOKEN_TYPE, isASTType, isNonLeafTermType, isNonTerminal } from "./common";
+import { BUILT_IN_VALUES, ParsedToken, consume, TYPES_TO_IGNORE, handleBuiltinValue, isASTType, isNonLeafTermType, isNonTerminal, handleBasePred, BUILT_IN_PREDS, handleBuiltinPred } from "./common";
 import { ParserObject as AST } from "../lexers-parsers-types";
 
 
@@ -259,10 +259,13 @@ function _computeSemanticTokensRuleSubgoalAtom(ast: AST, declaredParameters: str
     }
     
     let predicateTokens: ParsedToken[] = [];
-    if (viewPredicates.has(predicate.content)) {
+    const predName = predicate.content;
+    if (BUILT_IN_PREDS.has(predName)) {
+        predicateTokens = [...handleBuiltinPred(predicate)];
+    } else if (viewPredicates.has(predName)) {
         predicateTokens = [...consume(predicate, 'function')];
     } else {
-        predicateTokens = [...consume(predicate, BASE_PRED_TOKEN_TYPE, BASE_PRED_TOKEN_MODIFIERS)];
+        predicateTokens = [...handleBasePred(predicate)];
     }
 
     let parsedTokens: ParsedToken[] = [...predicateTokens];

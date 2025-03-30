@@ -3,6 +3,8 @@ import { ParserObject as AST, RulesetParserObjectType } from "../lexers-parsers-
 
 export const TYPES_TO_IGNORE = ['WHITESPACE', 'OPEN_PAREN', 'CLOSE_PAREN', 'OPEN_BRACKET', 'CLOSE_BRACKET', 'COMMA', 'PERIOD', 'LIST_SEPARATOR', 'RULE_SEPARATOR_NECK', 'AMPERSAND', 'DOUBLE_COLON', 'DOUBLE_ARROW', 'DEFINITION_SEPARATOR'];
 export const BUILT_IN_VALUES = ['nil', 'true', 'false'];
+export const BUILT_IN_PREDS = new Set(['member', 'same', 'distinct']);
+
 
 export interface NarrowedAST<T extends RulesetParserObjectType> extends AST {
     type: T;
@@ -65,5 +67,14 @@ export function handleBuiltinValue(ast: AST): ParsedToken[] {
     return consume(ast, 'variable', ['readonly', 'defaultLibrary']);
 }
 
-export const BASE_PRED_TOKEN_TYPE = 'property';
-export const BASE_PRED_TOKEN_MODIFIERS = [];
+export function handleBuiltinPred(ast: AST): ParsedToken[] {
+    if (!BUILT_IN_PREDS.has(ast.content)) {
+        console.error('Expected builtin pred but got: ', ast.content);
+        return [];
+    }
+    return consume(ast, 'function', ['defaultLibrary']);
+}
+
+export function handleBasePred(ast: AST): ParsedToken[] {
+    return consume(ast, 'variable', []);
+}

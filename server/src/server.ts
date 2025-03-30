@@ -108,10 +108,20 @@ connection.onInitialized(() => {
 	}
 });
 
+function refreshASTsAndInfo() {
+	documentASTsAndInfo.clear();
+	documents.all().forEach(document => {
+		const astAndInfo = computeASTAndInfo(document);
+		if (astAndInfo) {
+			documentASTsAndInfo.set(document.uri, astAndInfo);
+		}
+	});
+}
+
 connection.onDidChangeConfiguration(change => {
 	// Revalidate all open text documents
 	documents.all().forEach(validateTextDocument);
-	documentASTsAndInfo.clear();
+	refreshASTsAndInfo();
 });
 
 connection.onDidChangeWatchedFiles(event => {

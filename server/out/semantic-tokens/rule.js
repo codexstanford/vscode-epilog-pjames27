@@ -216,11 +216,15 @@ function _computeSemanticTokensRuleSubgoalAtom(ast, declaredParameters, viewPred
         return (0, common_1.consume)(ast);
     }
     let predicateTokens = [];
-    if (viewPredicates.has(predicate.content)) {
+    const predName = predicate.content;
+    if (common_1.BUILT_IN_PREDS.has(predName)) {
+        predicateTokens = [...(0, common_1.handleBuiltinPred)(predicate)];
+    }
+    else if (viewPredicates.has(predName)) {
         predicateTokens = [...(0, common_1.consume)(predicate, 'function')];
     }
     else {
-        predicateTokens = [...(0, common_1.consume)(predicate, common_1.BASE_PRED_TOKEN_TYPE, common_1.BASE_PRED_TOKEN_MODIFIERS)];
+        predicateTokens = [...(0, common_1.handleBasePred)(predicate)];
     }
     let parsedTokens = [...predicateTokens];
     // Handle the rest of the children, i.e. the arguments

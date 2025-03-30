@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BASE_PRED_TOKEN_MODIFIERS = exports.BASE_PRED_TOKEN_TYPE = exports.handleBuiltinValue = exports.consume = exports.isNonTerminal = exports.isNonLeafTermType = exports.isASTType = exports.BUILT_IN_VALUES = exports.TYPES_TO_IGNORE = void 0;
+exports.handleBasePred = exports.handleBuiltinPred = exports.handleBuiltinValue = exports.consume = exports.isNonTerminal = exports.isNonLeafTermType = exports.isASTType = exports.BUILT_IN_PREDS = exports.BUILT_IN_VALUES = exports.TYPES_TO_IGNORE = void 0;
 exports.TYPES_TO_IGNORE = ['WHITESPACE', 'OPEN_PAREN', 'CLOSE_PAREN', 'OPEN_BRACKET', 'CLOSE_BRACKET', 'COMMA', 'PERIOD', 'LIST_SEPARATOR', 'RULE_SEPARATOR_NECK', 'AMPERSAND', 'DOUBLE_COLON', 'DOUBLE_ARROW', 'DEFINITION_SEPARATOR'];
 exports.BUILT_IN_VALUES = ['nil', 'true', 'false'];
+exports.BUILT_IN_PREDS = new Set(['member', 'same', 'distinct']);
 function isASTType(ast, type) {
     return ast.type === type;
 }
@@ -47,6 +48,16 @@ function handleBuiltinValue(ast) {
     return consume(ast, 'variable', ['readonly', 'defaultLibrary']);
 }
 exports.handleBuiltinValue = handleBuiltinValue;
-exports.BASE_PRED_TOKEN_TYPE = 'property';
-exports.BASE_PRED_TOKEN_MODIFIERS = [];
+function handleBuiltinPred(ast) {
+    if (!exports.BUILT_IN_PREDS.has(ast.content)) {
+        console.error('Expected builtin pred but got: ', ast.content);
+        return [];
+    }
+    return consume(ast, 'function', ['defaultLibrary']);
+}
+exports.handleBuiltinPred = handleBuiltinPred;
+function handleBasePred(ast) {
+    return consume(ast, 'variable', []);
+}
+exports.handleBasePred = handleBasePred;
 //# sourceMappingURL=common.js.map

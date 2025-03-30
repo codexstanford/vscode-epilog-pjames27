@@ -1,6 +1,7 @@
 import { ParserObject as AST, RulesetParserObjectType } from "../lexers-parsers-types";
 export declare const TYPES_TO_IGNORE: string[];
 export declare const BUILT_IN_VALUES: string[];
+export declare const BUILT_IN_PREDS: Set<string>;
 export interface NarrowedAST<T extends RulesetParserObjectType> extends AST {
     type: T;
 }
@@ -20,6 +21,6 @@ export type ParsedToken = {
     modifiers: string[];
 };
 export declare function handleBuiltinValue(ast: AST): ParsedToken[];
-export declare const BASE_PRED_TOKEN_TYPE = "property";
-export declare const BASE_PRED_TOKEN_MODIFIERS: never[];
+export declare function handleBuiltinPred(ast: AST): ParsedToken[];
+export declare function handleBasePred(ast: AST): ParsedToken[];
 export {};
