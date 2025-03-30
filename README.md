@@ -70,6 +70,10 @@ data:
 - Resolving full file content can fail when referenced files have different line endings (CLRF vs LF)
 
 ## Release Notes
+### 0.3.0
+- Significantly improved syntax highlighting through the provision of semantic tokens.
+    - Uses Paul Welter's lexers and parsers that CodeX commissioned for Epilog.
+
 ### 0.2.7
 - Added a summary of results when the Run Script command is executed on a folder of datasets.
 
