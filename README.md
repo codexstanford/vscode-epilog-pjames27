@@ -3,7 +3,7 @@
 A Language Server extension which provides language support for Epilog, the logic programming language developed at Stanford University and used in Prof. Michael Genesereth's CS 151 course.
 
 ## Features
-- Provides syntax highlighting for the Epilog programming language. By default, syntax highlighting is applied to .hdf, and .hrf files.
+- Provides syntax highlighting for the Epilog programming language. By default, syntax highlighting is applied to .hdf (dataset) and .hrf (ruleset) files.
 - Provides a "Run Script" command which allows Epilog queries to be run from a .epilogscript file.
 - Provides a "Consolidate" command which can be run to gather and save content from referenced files into a single file.
 - Enables decomposition by allowing reference to metadata, data, and rules from other files of the same type.
